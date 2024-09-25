@@ -38,6 +38,10 @@ const UserSchema = new Schema({
     trim: true,
     match: NAME_REGEXP
   },
+  forgotPassword: {
+    type: String,
+    default: ''
+  },
 
   created_at: { type: Date, default: Date.now },
   updated_at: { type: Date, default: Date.now },
@@ -52,6 +56,7 @@ export interface UserDocument extends Document {
   avatar_url: string
   status: string
   tag: string
+  forgotPassword: string
   created_at: Date
   updated_at: Date
   lastLoginTime: Date
