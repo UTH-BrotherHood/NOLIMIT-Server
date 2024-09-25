@@ -1,7 +1,7 @@
 export enum userVerificationStatus {
-  Unverified, // default is 0
-  Verified, // Verified
-  Blocked // Global ban =))) ???
+  Unverified,
+  Verified,
+  Blocked
 }
 
 export enum tokenType {
