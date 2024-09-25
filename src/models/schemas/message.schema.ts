@@ -29,6 +29,16 @@ const MessageSchema = new Schema({
       type: String
     }
   ],
+  is_read: {
+    type: Boolean,
+    default: false // Mặc định là chưa xem
+  },
+  read_by: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: 'User'
+    }
+  ],
   created_at: {
     type: Date,
     default: Date.now
@@ -43,8 +53,10 @@ export interface MessageDocument extends Document {
   conversation_id: ConversationDocument['_id']
   sender_id: UserDocument['_id']
   message_content: string
-  message_type: string
-  attachments?: string[]
+  message_type: string // Loại tin nhắn
+  attachments?: string[] // Đường dẫn file đính kèm
+  is_read: boolean // Trạng thái xem của tin nhắn
+  read_by: UserDocument['_id'][] // Danh sách người đã xem tin nhắn
   created_at: Date
   updated_at: Date
 }
