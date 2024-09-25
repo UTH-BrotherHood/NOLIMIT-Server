@@ -1,6 +1,6 @@
 import { Schema, model, Document } from 'mongoose'
 import Collection from '~/constants/collection'
-import { NAME_REGEXP } from '~/constants/const'
+import { NAME_REGEXP } from '~/constants/regex'
 
 const GroupSchema = new Schema({
   name: {

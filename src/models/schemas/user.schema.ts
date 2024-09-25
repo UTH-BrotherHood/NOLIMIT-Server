@@ -1,6 +1,6 @@
 import { Schema, model, Document } from 'mongoose'
 import Collection from '~/constants/collection'
-import { EMAIL_REGEXP, NAME_REGEXP } from '~/constants/const'
+import { EMAIL_REGEXP, NAME_REGEXP } from '~/constants/regex'
 
 const UserSchema = new Schema({
   username: {
