@@ -7,6 +7,7 @@ const Collection = {
   NOTIFICATION: 'notification', // THONG BAO
   ATTACHMENT: 'attachment', // TEP DINH KEM
   REACTION: 'reaction', // PHAN UNG TIN NHAN
+  TOKEN: 'token', // TOKEN
   // có thể mở rộng sau
   FRIENDREQUEST: 'friendrequest', // BAN BE
   BLOCKEDUSER: 'blockeduser', // DANH SACH BLOCK

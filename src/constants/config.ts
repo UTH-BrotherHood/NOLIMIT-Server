@@ -16,4 +16,11 @@ export const envConfig = {
   port: (process.env.PORT as string) || 3000,
   clientUrl: process.env.CLIENT_URL as string,
   dbUsersCollection: process.env.DB_USERS_COLLECTION as string,
+  dbTokensCollection: process.env.DB_TOKENS_COLLECTION as string,
+  jwtSecretAccessToken: process.env.JWT_SECRET_ACCESS_TOKEN as string,
+  jwtSecretRefreshToken: process.env.JWT_SECRET_REFRESH_TOKEN as string,
+  accessTokenExpiresIn: process.env.JWT_EXPIRES_IN_ACCESS_TOKEN as string,
+  refreshTokenExpiresIn: process.env.JWT_EXPIRES_IN_REFRESH_TOKEN as string,
+  jwtSecretEmailVerifyToken: process.env.JWT_SECRET_EMAIL_VERIFY_TOKEN as string,
+  emailVerifyTokenExpiresIn: process.env.JWT_EXPIRES_IN_EMAIL_VERIFY_TOKEN as string
 } as const
