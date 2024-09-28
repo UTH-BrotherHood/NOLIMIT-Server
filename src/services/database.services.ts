@@ -1,10 +1,9 @@
 import { Collection, Db, MongoClient } from 'mongodb'
 import { envConfig } from '~/constants/config'
-import User from '~/models/schemas/user.chemas'
-
+import { TokenDocument } from '~/models/schemas/token.schema'
+import { UserDocument } from '~/models/schemas/user.schema'
 
 const uri = `mongodb+srv://${envConfig.dbUsername}:${envConfig.dbPassword}@cluster0.xvthd.mongodb.net/${envConfig.dbName}?retryWrites=true&w=majority&appName=Cluster0`
-
 
 class DatabaseServices {
   private client: MongoClient
@@ -26,10 +25,13 @@ class DatabaseServices {
     }
   }
 
-  get users(): Collection<User> {
+  get users(): Collection<UserDocument> {
     return this.db.collection(envConfig.dbUsersCollection)
   }
-  
+
+  get tokens(): Collection<TokenDocument> {
+    return this.db.collection(envConfig.dbTokensCollection)
+  }
 }
 const databaseServices = new DatabaseServices()
 export default databaseServices

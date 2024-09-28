@@ -1,5 +1,7 @@
+import { verify } from 'crypto'
 import { Schema, model, Document } from 'mongoose'
 import Collection from '~/constants/collection'
+import { userVerificationStatus } from '~/constants/enums'
 import { EMAIL_REGEXP, NAME_REGEXP } from '~/constants/regex'
 
 const UserSchema = new Schema({
@@ -42,7 +44,11 @@ const UserSchema = new Schema({
     type: String,
     default: ''
   },
-
+  verify: {
+    type: String,
+    enum: userVerificationStatus,
+    default: userVerificationStatus.Unverified
+  },
   created_at: { type: Date, default: Date.now },
   updated_at: { type: Date, default: Date.now },
   lastLoginTime: { type: Date, default: Date.now }
@@ -57,6 +63,7 @@ export interface UserDocument extends Document {
   status: string
   tag: string
   forgotPassword: string
+  verify?: userVerificationStatus
   created_at: Date
   updated_at: Date
   lastLoginTime: Date

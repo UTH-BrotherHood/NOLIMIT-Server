@@ -1,5 +1,6 @@
 import jwt, { SignOptions } from 'jsonwebtoken'
 import { envConfig } from '~/constants/config'
+import { USERS_MESSAGES } from '~/constants/messages'
 import { TokenPayload } from '~/models/requests/users.requests'
 
 export const signToken = ({
@@ -28,6 +29,7 @@ export const verifyToken = ({ token, secretOrPublickey }: { token: string; secre
     jwt.verify(token, secretOrPublickey, (err, decoded) => {
       if (err) {
         throw rejects(err)
+        // throw rejects(USERS_MESSAGES.UNAUTHORIZED)
       }
       resolve(decoded as TokenPayload)
     })
