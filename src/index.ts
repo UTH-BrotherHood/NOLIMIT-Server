@@ -4,8 +4,11 @@ import { envConfig } from '~/constants/config'
 import { defaultErrorHandler } from '~/middlewares/errors.middleware'
 import rootRouterV1 from '~/routes'
 import databaseServices from '~/services/database.services'
+import cors from 'cors'
 
 const app = express()
+
+app.use(cors())
 
 app.use(express.json())
 
