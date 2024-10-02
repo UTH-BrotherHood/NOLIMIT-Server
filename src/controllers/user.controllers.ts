@@ -1,46 +1,27 @@
 import { Request, Response } from 'express'
 import { ParamsDictionary } from 'express-serve-static-core'
-import { USERS_MESSAGES } from '~/constants/messages'
-import { LoginReqBody, RegisterReqBody } from '~/models/requests/users.requests'
+import { HTTP_MESSAGES, USERS_MESSAGES } from '~/constants/messages'
+import { LoginReqBody, RegisterReqBody, TokenPayload, RefreshTokenReqBody } from '~/models/requests/users.requests'
 import usersService from '~/services/users.services'
 
+interface CustomRequest extends Request {
+  decoded_refresh_token?: TokenPayload
+}
+
 export const registerController = async (req: Request<ParamsDictionary, any, RegisterReqBody>, res: Response) => {
-  try {
-    const result = await usersService.register(req.body)
-    return res.json({
-      message: USERS_MESSAGES.REGISTER_SUCCESSFULLY,
-      data: result
-    })
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : USERS_MESSAGES.UNKNOW_ERROR
-    return res.status(500).json({
-      message: USERS_MESSAGES.REGISTER_FAILED,
-      error: errorMessage
-    })
-  }
+  const result = await usersService.register(req.body)
+  return res.json({
+    message: USERS_MESSAGES.REGISTER_SUCCESSFULLY,
+    data: result
+  })
 }
 
 export const loginController = async (req: Request<ParamsDictionary, any, LoginReqBody>, res: Response) => {
-  try {
-    const result = await usersService.login(req.body)
-    return res.json({
-      message: USERS_MESSAGES.LOGIN_SUCCESSFULLY,
-      data: result
-    })
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : USERS_MESSAGES.UNKNOW_ERROR
-
-    if (errorMessage === USERS_MESSAGES.EMAIL_OR_PASSWORD_IS_INCORRECT) {
-      return res.status(400).json({
-        message: errorMessage
-      })
-    }
-
-    return res.status(500).json({
-      message: USERS_MESSAGES.UNKNOW_ERROR,
-      error: errorMessage
-    })
-  }
+  const result = await usersService.login(req.body)
+  return res.json({
+    message: USERS_MESSAGES.LOGIN_SUCCESSFULLY,
+    data: result
+  })
 }
 
 export const logoutController = async (
@@ -53,10 +34,21 @@ export const logoutController = async (
       message: USERS_MESSAGES.LOGOUT_SUCCESSFULLY
     })
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : USERS_MESSAGES.UNKNOW_ERROR
+    const errorMessage = error instanceof Error ? error.message : HTTP_MESSAGES.UNKNOW_ERROR
     return res.status(500).json({
       message: USERS_MESSAGES.LOGOUT_FAILED,
       error: errorMessage
     })
   }
+}
+
+export const refreshTokenController = async (req: CustomRequest, res: Response) => {
+  console.log('Decoded Refresh Token:', req.decoded_refresh_token)
+  const { refresh_token } = req.body
+  const { user_id, verify, exp } = req.decoded_refresh_token as TokenPayload
+  const result = await usersService.refreshToken({ user_id, verify, refresh_token, exp })
+  return res.json({
+    message: USERS_MESSAGES.REFRESH_TOKEN_SUCCESSFULLY,
+    data: result
+  })
 }

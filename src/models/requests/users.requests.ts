@@ -23,5 +23,8 @@ export interface TokenPayload extends JwtPayload {
   token_type: tokenType
   verify: userVerificationStatus
   exp: number
-  iat: number
+}
+
+export interface RefreshTokenReqBody {
+  refresh_token: string
 }

@@ -8,6 +8,8 @@ import { tokenType, userVerificationStatus } from '~/constants/enums'
 import { Token } from '~/models/schemas/token.schema'
 import { USERS_MESSAGES } from '~/constants/messages'
 import { ObjectId } from 'mongodb'
+import { ErrorWithStatus } from '~/utils/errors'
+import HTTP_STATUS from '~/constants/httpStatus'
 
 class UsersService {
   private signAccessToken({ user_id, verify }: { user_id: string; verify: userVerificationStatus }) {
@@ -143,13 +145,19 @@ class UsersService {
     }
 
     if (!user) {
-      throw new Error(USERS_MESSAGES.EMAIL_NOT_EXIST)
+      throw new ErrorWithStatus({
+        message: USERS_MESSAGES.EMAIL_OR_PASSWORD_IS_INCORRECT,
+        status: HTTP_STATUS.UNPROCESSABLE_ENTITY
+      })
     }
 
     const isPasswordMatch = await bcrypt.compare(password, user.password)
 
     if (!isPasswordMatch) {
-      throw new Error(USERS_MESSAGES.EMAIL_OR_PASSWORD_IS_INCORRECT)
+      throw new ErrorWithStatus({
+        message: USERS_MESSAGES.EMAIL_OR_PASSWORD_IS_INCORRECT,
+        status: HTTP_STATUS.UNPROCESSABLE_ENTITY
+      })
     }
 
     const [access_token, refresh_token] = await this.signAccessAndRefreshToken({
@@ -184,6 +192,63 @@ class UsersService {
   async checkEmailExist(email: string) {
     const user = await databaseServices.users.findOne({ email })
     return !!user
+  }
+
+  async refreshToken({
+    user_id,
+    verify,
+    refresh_token,
+    exp
+  }: {
+    user_id: string
+    verify: userVerificationStatus
+    refresh_token: string
+    exp: number
+  }) {
+    const user = await databaseServices.users.findOne({ _id: new ObjectId(user_id) as any })
+
+    if (!user) {
+      throw new ErrorWithStatus({
+        message: USERS_MESSAGES.USER_NOT_FOUND,
+        status: HTTP_STATUS.NOT_FOUND
+      })
+    }
+
+    const token = await databaseServices.tokens.findOne({ user_id: new ObjectId(user_id), token: refresh_token })
+
+    if (!token) {
+      throw new ErrorWithStatus({
+        message: USERS_MESSAGES.REFRESH_TOKEN_NOT_FOUND,
+        status: HTTP_STATUS.NOT_FOUND
+      })
+    }
+
+    if (token.expires_at.getTime() < Date.now()) {
+      throw new ErrorWithStatus({
+        message: USERS_MESSAGES.REFRESH_TOKEN_EXPIRED,
+        status: HTTP_STATUS.UNAUTHORIZED
+      })
+    }
+
+    const [access_token, new_refresh_token] = await this.signAccessAndRefreshToken({ user_id, verify })
+
+    await databaseServices.tokens.deleteOne({ user_id, token: refresh_token })
+
+    const { exp: new_exp } = await this.decodeRefreshToken(new_refresh_token)
+
+    await databaseServices.tokens.insertOne(
+      new Token({
+        user_id,
+        token: new_refresh_token,
+        type: tokenType.RefreshToken,
+        expires_at: new Date(new_exp * 1000)
+      })
+    )
+
+    return {
+      access_token,
+      refresh_token: new_refresh_token
+    }
   }
 }
 
