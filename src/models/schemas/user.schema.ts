@@ -1,4 +1,3 @@
-import { verify } from 'crypto'
 import { Schema, model, Document } from 'mongoose'
 import Collection from '~/constants/collection'
 import { userVerificationStatus } from '~/constants/enums'
@@ -40,7 +39,7 @@ const UserSchema = new Schema({
     trim: true,
     match: NAME_REGEXP
   },
-  forgotPassword: {
+  forgot_password: {
     type: String,
     default: ''
   },
@@ -51,7 +50,7 @@ const UserSchema = new Schema({
   },
   created_at: { type: Date, default: Date.now },
   updated_at: { type: Date, default: Date.now },
-  lastLoginTime: { type: Date, default: Date.now }
+  last_login_time: { type: Date, default: Date.now }
 })
 
 export interface UserDocument extends Document {

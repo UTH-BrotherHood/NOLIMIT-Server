@@ -3,12 +3,7 @@ import Collection from '~/constants/collection'
 import { UserDocument } from '~/models/schemas/user.schema'
 
 const NotificationSchema = new Schema({
-  recipient: {
-    type: Schema.Types.ObjectId,
-    ref: Collection.USER,
-    required: true
-  },
-  sender: {
+  sender_id: {
     type: Schema.Types.ObjectId,
     ref: Collection.USER,
     default: null
@@ -21,10 +16,6 @@ const NotificationSchema = new Schema({
     type: String,
     required: true
   },
-  is_read: {
-    type: Boolean,
-    default: false
-  },
   created_at: {
     type: Date,
     default: Date.now
@@ -32,11 +23,9 @@ const NotificationSchema = new Schema({
 })
 
 export interface NotificationDocument extends Document {
-  recipient: UserDocument['_id'] // Người nhận thông báo
-  sender?: UserDocument['_id'] // Người gửi thông báo (tùy chọn)
-  type: string // Loại thông báo (ví dụ: 'message', 'contact', 'system')
+  sender_id: UserDocument['_id'] // Người gửi thông báo (tùy chọn)
+  type: string // Loại thông báo (ví dụ: 'message', 'contact', 'system', 'reminder')
   content: string // Nội dung thông báo (ví dụ: 'Bạn có tin nhắn mới')
-  is_read: boolean // Trạng thái đã đọc
   created_at: Date // Ngày tạo thông báo
 }
 

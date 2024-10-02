@@ -28,7 +28,7 @@ export interface ConversationSettingsDocument extends Document {
   conversation_id: ConversationDocument['_id']
   user_id: UserDocument['_id']
   is_muted: boolean
-  notification_level: string
+  notification_level: string // all, mention, none (tắt thông báo)
 }
 
 export const ConversationSettings = model<ConversationSettingsDocument>(

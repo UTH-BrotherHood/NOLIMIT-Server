@@ -17,6 +17,10 @@ const ContactSchema = new Schema({
     type: String,
     default: ''
   },
+  is_favorite: {
+    type: Boolean,
+    default: false
+  },
   created_at: {
     type: Date,
     default: Date.now
@@ -27,6 +31,7 @@ export interface ContactDocument extends Document {
   user_id: UserDocument['_id'] // Người dùng sở hữu danh sách liên hệ
   contact_user_id: UserDocument['_id'] // Người dùng được lưu vào danh sách liên hệ
   nickname?: string // Tùy chọn: có thể đặt biệt danh cho người liên hệ
+  is_favorite: boolean // Tùy chọn: có thể đánh dấu người liên hệ là yêu thích
   created_at: Date
 }
 

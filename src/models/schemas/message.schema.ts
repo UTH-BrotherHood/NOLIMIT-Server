@@ -23,12 +23,6 @@ const MessageSchema = new Schema({
     enum: ['text', 'image', 'file', 'code', 'inviteV2', 'system'],
     default: 'text'
   },
-  // lưu trữ đường dẫn của file đính kèm.
-  attachments: [
-    {
-      type: String
-    }
-  ],
   is_read: {
     type: Boolean,
     default: false // Mặc định là chưa xem
@@ -36,7 +30,7 @@ const MessageSchema = new Schema({
   read_by: [
     {
       type: Schema.Types.ObjectId,
-      ref: 'User'
+      ref: Collection.USER
     }
   ],
   created_at: {
@@ -53,8 +47,7 @@ export interface MessageDocument extends Document {
   conversation_id: ConversationDocument['_id']
   sender_id: UserDocument['_id']
   message_content: string
-  message_type: string // Loại tin nhắn
-  attachments?: string[] // Đường dẫn file đính kèm
+  message_type: string // Loại tin nhắn (text, image, file, code, inviteV2, system)
   is_read: boolean // Trạng thái xem của tin nhắn
   read_by: UserDocument['_id'][] // Danh sách người đã xem tin nhắn
   created_at: Date
