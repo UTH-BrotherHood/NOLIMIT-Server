@@ -26,6 +26,8 @@ export const USERS_MESSAGES = {
   REFRESH_TOKEN_MUST_BE_STRING: 'Refresh token must be a string',
   REFRESH_TOKEN_IS_INVALID: 'Refresh token is invalid',
   REFRESH_TOKEN_SUCCESSFULLY: 'Refresh token successfully',
+  REFRESH_TOKEN_NOT_FOUND: 'Refresh token not found',
+  REFRESH_TOKEN_EXPIRED: 'Refresh token expired',
   //logout
   USED_REFRESH_TOKEN_OR_NOT_EXIST: 'Used refresh token or not exist',
   LOGOUT_SUCCESSFULLY: 'Logout successfully',
@@ -35,8 +37,12 @@ export const USERS_MESSAGES = {
   EMAIL_ALREADY_VERIFIED: 'Email already verified',
   USER_NOT_FOUND: 'User not found',
   EMAIL_VERIFIED_SUCCESSFULLY: 'Email verified successfully',
-  EMAIL_NOT_EXIST: 'Email not exist. Please register',
+  EMAIL_NOT_EXIST: 'Email not exist. Please register'
+} as const
 
+export const HTTP_MESSAGES = {
+  NOT_FOUND: 'Not Found',
+  INTERNAL_SERVER_ERROR: 'Internal server error',
   UNAUTHORIZED: 'Unauthorized',
   UNKNOW_ERROR: 'Unknow error'
 } as const

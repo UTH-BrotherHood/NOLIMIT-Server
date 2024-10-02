@@ -6,8 +6,11 @@ const Collection = {
   GROUP: 'group', // NHOM TRO CHUYEN
   NOTIFICATION: 'notification', // THONG BAO
   ATTACHMENT: 'attachment', // TEP DINH KEM
-  REACTION: 'reaction', // PHAN UNG TIN NHAN
+  REACTION: 'reaction', // PHAN UNG TIN NHAN (LIKE, LOVE, HAHA, WOW, SAD, ANGRY)
   TOKEN: 'token', // TOKEN
+  MESSAGE_ATTACHMENT: 'message_attachment', // TIN NHAN DINH KEM
+  MESSAGE_REACTION: 'message_reaction', // PHAN UNG TIN NHAN (LIKE, LOVE, HAHA, WOW, SAD, ANGRY)
+  USER_NOTIFICATION: 'user_notification', // THONG BAO NGUOI DUNG
   // có thể mở rộng sau
   FRIENDREQUEST: 'friendrequest', // BAN BE
   BLOCKEDUSER: 'blockeduser', // DANH SACH BLOCK
