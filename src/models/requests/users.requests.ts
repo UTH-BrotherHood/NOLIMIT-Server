@@ -5,10 +5,7 @@ export interface RegisterReqBody {
   email: string
   password: string
   date_of_birth: Date
-  avatar_url?: string
   status?: string
-  tag?: string
-  forgotPassword?: string
   created_at?: Date
   updated_at?: Date
   last_login_time?: Date
@@ -16,6 +13,13 @@ export interface RegisterReqBody {
 export interface LoginReqBody {
   email: string
   password: string
+}
+
+export interface updateMeReqBody {
+  username?: string
+  date_of_birth?: string
+  bio?: string
+  avatar_url?: string
 }
 
 export interface TokenPayload extends JwtPayload {
