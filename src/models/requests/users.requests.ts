@@ -32,3 +32,7 @@ export interface TokenPayload extends JwtPayload {
 export interface RefreshTokenReqBody {
   refresh_token: string
 }
+
+export interface EmailVerifyReqBody {
+  email_verification_token: string
+}
