@@ -6,10 +6,14 @@ import {
   RegisterReqBody,
   TokenPayload,
   RefreshTokenReqBody,
-  updateMeReqBody
+  updateMeReqBody,
+  EmailVerifyReqBody
 } from '~/models/requests/users.requests'
+import databaseServices from '~/services/database.services'
 import usersService from '~/services/users.services'
-
+import { ObjectId } from 'mongodb'
+import HTTP_STATUS from '~/constants/httpStatus'
+import { tokenType } from '~/constants/enums'
 interface CustomRequest extends Request {
   decoded_refresh_token?: TokenPayload
 }
@@ -71,4 +75,29 @@ export const updateMeController = async (
     message: USERS_MESSAGES.UPDATE_ME_SUCCESSFULLY,
     result: user
   })
+}
+
+export const verifyEmailController = async (req: Request<ParamsDictionary, any, EmailVerifyReqBody>, res: Response) => {
+  const { user_id } = req.decoded_email_verify_token as TokenPayload
+  const user = await databaseServices.users.findOne({ _id: new ObjectId(user_id) } as any)
+  if (!user) {
+    return res.status(HTTP_STATUS.NOT_FOUND).json({ message: USERS_MESSAGES.USER_NOT_FOUND })
+  }
+  // đã verify rồi thì không báo lỗi
+  //   mà sẽ trả về status OK với message là email đã được verify trước đó rồi
+  const token = await databaseServices.tokens.findOne({
+    user_id: new ObjectId(user_id),
+    type: tokenType.EmailVerificationToken
+  })
+
+  if (token) {
+    if (token.token === '') {
+      return res.json({ message: USERS_MESSAGES.EMAIL_ALREADY_VERIFIED })
+    }
+    const result = await usersService.verifyEmail(user_id)
+    return res.json({
+      message: USERS_MESSAGES.EMAIL_VERIFIED_SUCCESSFULLY,
+      result
+    })
+  }
 }
