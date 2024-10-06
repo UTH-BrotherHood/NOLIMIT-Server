@@ -256,7 +256,7 @@ class UsersService {
 
     const [access_token, new_refresh_token] = await this.signAccessAndRefreshToken({ user_id, verify })
 
-    await databaseServices.tokens.deleteOne({ user_id, token: refresh_token })
+    await databaseServices.tokens.deleteOne({ user_id: new ObjectId(user_id), token: refresh_token })
 
     const { exp: new_exp } = await this.decodeRefreshToken(new_refresh_token)
 
