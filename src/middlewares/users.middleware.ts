@@ -8,7 +8,9 @@ import { envConfig } from '~/constants/config'
 import { JsonWebTokenError } from 'jsonwebtoken'
 import { ErrorWithStatus } from '~/utils/errors'
 import { NAME_REGEXP } from '~/constants/regex'
-import { Request } from 'express'
+import { NextFunction, Request, Response } from 'express'
+import { TokenPayload } from '~/models/requests/users.requests'
+import { userVerificationStatus } from '~/constants/enums'
 
 const usernameSchema: ParamSchema = {
   optional: true,
@@ -193,6 +195,19 @@ export const accessTokenValidation = validate(
     ['headers']
   )
 )
+
+export const verifiedUserValidation = (req: Request, res: Response, next: NextFunction) => {
+  const { verify } = req.decoded_authorization as TokenPayload
+  if (verify !== userVerificationStatus.Verified) {
+    return next(
+      new ErrorWithStatus({
+        message: USERS_MESSAGES.USER_NOT_VERIFIED,
+        status: HTTP_STATUS.FORBIDDEN
+      })
+    )
+  }
+  next()
+}
 
 export const refreshTokenValidation = validate(
   checkSchema(

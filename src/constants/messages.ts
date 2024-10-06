@@ -19,6 +19,8 @@ export const USERS_MESSAGES = {
   REGISTER_SUCCESSFULLY: 'Register successfully',
   REGISTER_FAILED: 'Register failed',
   LOGOUT_FAILED: 'Logout failed',
+  // check verify
+  USER_NOT_VERIFIED: 'User not verified',
   //accessToken
   ACCESS_TOKEN_REQUIRED: 'Access token is required',
   ACCESS_TOKEN_IS_INVALID: 'Access token is invalid',
