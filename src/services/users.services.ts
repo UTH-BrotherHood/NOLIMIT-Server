@@ -1,4 +1,4 @@
-import { LoginReqBody, RegisterReqBody } from '~/models/requests/users.requests'
+import { LoginReqBody, RegisterReqBody, updateMeReqBody } from '~/models/requests/users.requests'
 import User from '~/models/schemas/user.schema'
 import databaseServices from '~/services/database.services'
 import bcrypt from 'bcrypt'
@@ -104,7 +104,7 @@ class UsersService {
     // Sau khi đăng ký thành công, tạo Access Token và Refresh Token cho người dùng
     const [access_token, refresh_token] = await this.signAccessAndRefreshToken({
       user_id: result.insertedId.toString(),
-      verify: userVerificationStatus.Verified
+      verify: userVerificationStatus.Unverified
     })
 
     // Xóa các token cũ nếu tồn tại để đảm bảo không có refresh token dư thừa
@@ -249,6 +249,32 @@ class UsersService {
       access_token,
       refresh_token: new_refresh_token
     }
+  }
+
+  async updateMe(user_id: string, payload: updateMeReqBody) {
+    const _payload = payload.date_of_birth ? { ...payload, date_of_birth: new Date(payload.date_of_birth) } : payload
+    const user = await databaseServices.users.findOneAndUpdate(
+      {
+        _id: new ObjectId(user_id) as any
+      },
+      {
+        $set: {
+          ...(_payload as updateMeReqBody & { date_of_birth?: Date })
+        },
+        $currentDate: { updated_at: true }
+      }
+    )
+
+    const result = await databaseServices.users.findOne({ _id: new ObjectId(user_id) as any })
+    if (!result) {
+      throw new ErrorWithStatus({
+        message: USERS_MESSAGES.USER_NOT_FOUND,
+        status: HTTP_STATUS.NOT_FOUND
+      })
+    }
+    const { _id, password, forgot_password , ...userWithoutPassword } = result
+
+    return userWithoutPassword
   }
 }
 
