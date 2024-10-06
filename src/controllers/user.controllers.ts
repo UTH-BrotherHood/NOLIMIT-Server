@@ -13,7 +13,7 @@ import databaseServices from '~/services/database.services'
 import usersService from '~/services/users.services'
 import { ObjectId } from 'mongodb'
 import HTTP_STATUS from '~/constants/httpStatus'
-import { tokenType } from '~/constants/enums'
+import { tokenType, userVerificationStatus } from '~/constants/enums'
 interface CustomRequest extends Request {
   decoded_refresh_token?: TokenPayload
 }
@@ -99,4 +99,17 @@ export const verifyEmailController = async (req: Request<ParamsDictionary, any, 
       result
     })
   }
+}
+
+export const resendVerifyEmailController = async (req: Request, res: Response) => {
+  const { user_id } = req.decoded_authorization as TokenPayload
+  const user = await databaseServices.users.findOne({ _id: new ObjectId(user_id) })
+  if (!user) {
+    return res.status(HTTP_STATUS.NOT_FOUND).json({ message: USERS_MESSAGES.USER_NOT_FOUND })
+  }
+  if (user.verify === userVerificationStatus.Verified) {
+    return res.json({ message: USERS_MESSAGES.EMAIL_ALREADY_VERIFIED_BEFORE })
+  }
+  const result = await usersService.resendVerifyEmail(user_id, user.email, user.username)
+  return res.json(result)
 }
