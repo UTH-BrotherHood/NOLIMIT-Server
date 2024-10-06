@@ -53,7 +53,6 @@ export const logoutController = async (
 }
 
 export const refreshTokenController = async (req: CustomRequest, res: Response) => {
-  console.log('Decoded Refresh Token:', req.decoded_refresh_token)
   const { refresh_token } = req.body
   const { user_id, verify, exp } = req.decoded_refresh_token as TokenPayload
   const result = await usersService.refreshToken({ user_id, verify, refresh_token, exp })
@@ -79,7 +78,7 @@ export const updateMeController = async (
 
 export const verifyEmailController = async (req: Request<ParamsDictionary, any, EmailVerifyReqBody>, res: Response) => {
   const { user_id } = req.decoded_email_verify_token as TokenPayload
-  const user = await databaseServices.users.findOne({ _id: new ObjectId(user_id) } as any)
+  const user = await databaseServices.users.findOne({ _id: new ObjectId(user_id) })
   if (!user) {
     return res.status(HTTP_STATUS.NOT_FOUND).json({ message: USERS_MESSAGES.USER_NOT_FOUND })
   }
