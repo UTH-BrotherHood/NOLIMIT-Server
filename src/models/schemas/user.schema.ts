@@ -66,7 +66,7 @@ export interface UserDocument extends Document {
   bio: string
   status: string
   tag: string
-  forgotPassword: string
+  forgot_password: string
   verify?: userVerificationStatus
   created_at: Date
   updated_at: Date

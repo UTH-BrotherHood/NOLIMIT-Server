@@ -3,14 +3,18 @@ import {
   loginController,
   logoutController,
   refreshTokenController,
-  registerController
+  registerController,
+  updateMeController
 } from '~/controllers/user.controllers'
+import { filterMiddleware } from '~/middlewares/common.middlewares'
 import {
   accessTokenValidation,
   loginValidation,
   refreshTokenValidation,
-  registerValidation
+  registerValidation,
+  updateMeValidation
 } from '~/middlewares/users.middleware'
+import { updateMeReqBody } from '~/models/requests/users.requests'
 import { wrapRequestHandler } from '~/utils/handlers'
 
 const usersRouters = Router()
@@ -45,4 +49,20 @@ Method: POST
 Body: { refresh_token : string}
 */
 usersRouters.post('/refresh-token', refreshTokenValidation, wrapRequestHandler(refreshTokenController))
+
+/*
+Description: Update my profile
+Path: /me
+Headers: { Authorization : Bearer <accessToken> }
+Method: PATCH
+Body : User Schema
+*/
+usersRouters.patch(
+  '/me',
+  accessTokenValidation,
+  updateMeValidation,
+  filterMiddleware<updateMeReqBody>(['date_of_birth', 'bio', 'username', 'avatar_url']),
+  wrapRequestHandler(updateMeController)
+)
+
 export default usersRouters
