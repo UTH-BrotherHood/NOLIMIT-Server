@@ -2,6 +2,7 @@ import { Schema, model, Document } from 'mongoose'
 import Collection from '~/constants/collection'
 import { userVerificationStatus } from '~/constants/enums'
 import { EMAIL_REGEXP, NAME_REGEXP } from '~/constants/regex'
+import { ObjectId } from 'mongodb'
 
 const UserSchema = new Schema({
   username: {
@@ -58,6 +59,7 @@ const UserSchema = new Schema({
 })
 
 export interface UserDocument extends Document {
+  _id: ObjectId
   username: string
   email: string
   password: string
