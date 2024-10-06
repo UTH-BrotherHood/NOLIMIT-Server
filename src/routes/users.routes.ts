@@ -14,7 +14,8 @@ import {
   loginValidation,
   refreshTokenValidation,
   registerValidation,
-  updateMeValidation
+  updateMeValidation,
+  verifiedUserValidation
 } from '~/middlewares/users.middleware'
 import { updateMeReqBody } from '~/models/requests/users.requests'
 import { wrapRequestHandler } from '~/utils/handlers'
@@ -62,6 +63,7 @@ Body : User Schema
 usersRouters.patch(
   '/me',
   accessTokenValidation,
+  verifiedUserValidation,
   updateMeValidation,
   filterMiddleware<updateMeReqBody>(['date_of_birth', 'bio', 'username', 'avatar_url']),
   wrapRequestHandler(updateMeController)

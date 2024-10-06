@@ -5,7 +5,7 @@ import { HTTP_MESSAGES } from '~/constants/messages'
 import { EntityError, ErrorWithStatus } from '~/utils/errors'
 
 export const defaultErrorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
-  console.error(`Error: ${err.message} at ${req.method} ${req.url}`)
+  console.warn(`Error: ${err.message} at ${req.method} ${req.url}`)
   // console.log('Full error details:', err)
 
   if (res.headersSent) {
