@@ -3,6 +3,7 @@ export const USERS_MESSAGES = {
   NAME_REQUIRED: 'Name is required',
   NAME_MUST_BE_STRING: 'Name must be a string',
   NAME_LENGTH: 'Name must be between 1 and 100 characters long',
+  USERNAME_INVALID: 'Username is invalid',
   EMAIL_ALREADY_EXIST: 'Email is already exist',
   EMAIL_REQUIRED: 'Email is required',
   EMAIL_INVALID: 'Email is invalid',
@@ -37,7 +38,11 @@ export const USERS_MESSAGES = {
   EMAIL_ALREADY_VERIFIED: 'Email already verified',
   USER_NOT_FOUND: 'User not found',
   EMAIL_VERIFIED_SUCCESSFULLY: 'Email verified successfully',
-  EMAIL_NOT_EXIST: 'Email not exist. Please register'
+  EMAIL_NOT_EXIST: 'Email not exist. Please register',
+  // Update me
+  BIO_MUST_BE_STRING: 'Bio must be a string',
+  BIO_LENGTH: 'Bio must be between 1 and 110 characters long',
+  UPDATE_ME_SUCCESSFULLY: 'Update me successfully'
 } as const
 
 export const HTTP_MESSAGES = {

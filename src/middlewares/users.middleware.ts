@@ -7,6 +7,8 @@ import { verifyToken } from '~/utils/tokens'
 import { envConfig } from '~/constants/config'
 import { JsonWebTokenError } from 'jsonwebtoken'
 import { ErrorWithStatus } from '~/utils/errors'
+import { NAME_REGEXP } from '~/constants/regex'
+import databaseServices from '~/services/database.services'
 
 const usernameSchema: ParamSchema = {
   optional: true,
@@ -23,7 +25,14 @@ const usernameSchema: ParamSchema = {
     },
     errorMessage: USERS_MESSAGES.NAME_LENGTH
   },
-  trim: true
+  trim: true,
+  custom: {
+    options: async (value: string, { req }) => {
+      if (!NAME_REGEXP.test(value)) {
+        throw new Error(USERS_MESSAGES.USERNAME_INVALID)
+      }
+    }
+  }
 }
 
 const dateOfBirthSchema: ParamSchema = {
@@ -214,6 +223,37 @@ export const refreshTokenValidation = validate(
             return true
           }
         }
+      }
+    },
+    ['body']
+  )
+)
+
+export const updateMeValidation = validate(
+  checkSchema(
+    {
+      username: {
+        ...usernameSchema,
+        optional: true,
+        isEmpty: undefined
+      },
+      date_of_birth: {
+        ...dateOfBirthSchema,
+        optional: true
+      },
+      bio: {
+        optional: true,
+        isString: {
+          errorMessage: USERS_MESSAGES.BIO_MUST_BE_STRING
+        },
+        isLength: {
+          options: {
+            min: 1,
+            max: 200
+          },
+          errorMessage: USERS_MESSAGES.BIO_LENGTH
+        },
+        trim: true
       }
     },
     ['body']

@@ -1,7 +1,13 @@
 import { Request, Response } from 'express'
-import { ParamsDictionary } from 'express-serve-static-core'
+import { NextFunction, ParamsDictionary } from 'express-serve-static-core'
 import { HTTP_MESSAGES, USERS_MESSAGES } from '~/constants/messages'
-import { LoginReqBody, RegisterReqBody, TokenPayload, RefreshTokenReqBody } from '~/models/requests/users.requests'
+import {
+  LoginReqBody,
+  RegisterReqBody,
+  TokenPayload,
+  RefreshTokenReqBody,
+  updateMeReqBody
+} from '~/models/requests/users.requests'
 import usersService from '~/services/users.services'
 
 interface CustomRequest extends Request {
@@ -50,5 +56,19 @@ export const refreshTokenController = async (req: CustomRequest, res: Response) 
   return res.json({
     message: USERS_MESSAGES.REFRESH_TOKEN_SUCCESSFULLY,
     data: result
+  })
+}
+
+export const updateMeController = async (
+  req: Request<ParamsDictionary, any, updateMeReqBody>,
+  res: Response,
+  next: NextFunction
+) => {
+  const { user_id } = req.decoded_authorization as TokenPayload
+  const { body } = req
+  const user = await usersService.updateMe(user_id, body)
+  return res.json({
+    message: USERS_MESSAGES.UPDATE_ME_SUCCESSFULLY,
+    result: user
   })
 }

@@ -28,6 +28,10 @@ const UserSchema = new Schema({
     type: String,
     default: ''
   },
+  bio: {
+    type: String,
+    default: ''
+  },
   status: {
     type: String,
     enum: ['online', 'offline'],
@@ -59,9 +63,10 @@ export interface UserDocument extends Document {
   password: string
   date_of_birth: Date
   avatar_url: string
+  bio: string
   status: string
   tag: string
-  forgotPassword: string
+  forgot_password: string
   verify?: userVerificationStatus
   created_at: Date
   updated_at: Date
