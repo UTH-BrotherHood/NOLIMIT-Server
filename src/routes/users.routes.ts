@@ -4,11 +4,13 @@ import {
   logoutController,
   refreshTokenController,
   registerController,
-  updateMeController
+  updateMeController,
+  verifyEmailController
 } from '~/controllers/user.controllers'
 import { filterMiddleware } from '~/middlewares/common.middlewares'
 import {
   accessTokenValidation,
+  emailVerifyTokenValidation,
   loginValidation,
   refreshTokenValidation,
   registerValidation,
@@ -64,5 +66,13 @@ usersRouters.patch(
   filterMiddleware<updateMeReqBody>(['date_of_birth', 'bio', 'username', 'avatar_url']),
   wrapRequestHandler(updateMeController)
 )
+
+/*
+Description: Verify email when user click on the link in the email
+Path: /verify-email
+Method: POST
+Body: { email_verification_token : string}
+*/
+usersRouters.post('/verify-email', emailVerifyTokenValidation, wrapRequestHandler(verifyEmailController))
 
 export default usersRouters
