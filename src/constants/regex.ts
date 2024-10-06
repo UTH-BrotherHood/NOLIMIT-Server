@@ -1,2 +1,2 @@
-export const NAME_REGEXP = /^([0-9a-zA-Z]{1,2}|[\u4e00-\u9eff]|[\u3040-\u309Fー]|[\u30A0-\u30FF]){1,8}$/;
-export const EMAIL_REGEXP = /^([0-9a-zA-Z]+[-._+&])*[0-9a-zA-Z]+@([0-9a-zA-Z]+[-._])*[0-9a-zA-Z]+\.[a-zA-Z]{2,3}$/;
+export const NAME_REGEXP = /^[\w'\-,.][^0-9_!¡?÷?¿/\\+=@#$%ˆ&*(){}|~<>;:[\]]{2,}$/
+export const EMAIL_REGEXP = /^([0-9a-zA-Z]+[-._+&])*[0-9a-zA-Z]+@([0-9a-zA-Z]+[-._])*[0-9a-zA-Z]+\.[a-zA-Z]{2,3}$/
