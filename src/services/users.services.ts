@@ -76,6 +76,13 @@ class UsersService {
     })
   }
 
+  private decodeEmailVerifyToken(email_verify_token: string) {
+    return verifyToken({
+      token: email_verify_token,
+      secretOrPublickey: envConfig.jwtSecretEmailVerifyToken
+    })
+  }
+
   private decodeRefreshToken(refresh_token: string) {
     return verifyToken({
       token: refresh_token,
@@ -88,46 +95,63 @@ class UsersService {
   }
 
   async register(payload: RegisterReqBody) {
+    const user_id = new ObjectId()
+    // Tạo mã token xác minh email
+    const email_verify_token = await this.signEmailVerifyToken({
+      user_id: user_id.toString(),
+      verify: userVerificationStatus.Unverified
+    })
     // Mã hóa mật khẩu
     const hashedPassword = await bcrypt.hash(payload.password, 10)
 
     // Tạo người dùng mới với mật khẩu đã mã hóa
     const newUser = new User({
+      _id: user_id,
       ...payload,
-      password: hashedPassword,
-      verify: userVerificationStatus.Unverified // Mặc định trạng thái người dùng chưa xác minh
+      password: hashedPassword
     })
 
     // Lưu người dùng mới vào cơ sở dữ liệu
-    const result = (await databaseServices.users.insertOne(newUser)) as { insertedId: { toString: () => string } }
+    await databaseServices.users.insertOne(newUser)
+    // Lưu verify email token  và refresh token vào cơ sở dữ liệu
+    const { iat: iat_email_verify_token, exp: exp_email_verify_token } =
+      await this.decodeEmailVerifyToken(email_verify_token)
 
-    // Sau khi đăng ký thành công, tạo Access Token và Refresh Token cho người dùng
     const [access_token, refresh_token] = await this.signAccessAndRefreshToken({
-      user_id: result.insertedId.toString(),
+      user_id: user_id.toString(),
       verify: userVerificationStatus.Unverified
     })
+    const { iat: iat_refresh_token, exp: exp_refresh_token } = await this.decodeRefreshToken(refresh_token)
 
-    // Xóa các token cũ nếu tồn tại để đảm bảo không có refresh token dư thừa
-    await databaseServices.tokens.deleteMany({ user_id: result.insertedId.toString(), type: tokenType.RefreshToken })
-
-    // Giải mã Refresh Token để lấy thời gian hết hạn
-    const { exp } = await this.decodeRefreshToken(refresh_token)
-
-    // THÊM REFRESH TOKEN VÀO TOKEN COLLECTION
     await databaseServices.tokens.insertOne(
       new Token({
-        user_id: result.insertedId.toString(),
-        token: refresh_token,
-        type: tokenType.RefreshToken,
-        expires_at: new Date(exp * 1000)
+        user_id,
+        token: email_verify_token,
+        type: tokenType.EmailVerificationToken,
+        expires_at: new Date((exp_email_verify_token as number) * 1000),
+        created_at: new Date((iat_email_verify_token as number) * 1000)
       })
     )
+    await databaseServices.tokens.insertOne(
+      new Token({
+        user_id,
+        token: refresh_token,
+        type: tokenType.RefreshToken,
+        expires_at: new Date((exp_refresh_token as number) * 1000),
+        created_at: new Date((iat_refresh_token as number) * 1000)
+      })
+    )
+
+    // Xóa các token cũ nếu tồn tại để đảm bảo không có refresh token dư thừa ( em vương nghĩ để trong login sẽ hợp lý hơn)
+    // await databaseServices.tokens.deleteMany({ user_id: user_id, type: tokenType.RefreshToken })
 
     // Tạo email verify token (nếu có yêu cầu xác minh email)
     // const emailVerifyToken = this.signEmailVerifyToken({
     //   user_id: result.insertedId.toString(),
     //   verify: newUser.verify
     // })
+
+    console.info('Email Verify Token:', email_verify_token)
 
     return {
       access_token,
@@ -272,9 +296,50 @@ class UsersService {
         status: HTTP_STATUS.NOT_FOUND
       })
     }
-    const { _id, password, forgot_password , ...userWithoutPassword } = result
+    const { _id, password, forgot_password, ...userWithoutPassword } = result
 
     return userWithoutPassword
+  }
+
+  async verifyEmail(user_id: string) {
+    const [token] = await Promise.all([
+      this.signAccessAndRefreshToken({ user_id, verify: userVerificationStatus.Verified }),
+      databaseServices.tokens.updateOne(
+        { user_id: new ObjectId(user_id), type: tokenType.EmailVerificationToken },
+        {
+          $set: {
+            token: ''
+          },
+          $currentDate: { updated_at: true }
+        }
+      ),
+
+      databaseServices.users.updateOne(
+        { _id: new ObjectId(user_id) as any },
+        {
+          $set: {
+            verify: userVerificationStatus.Verified
+          },
+          $currentDate: { updated_at: true }
+        }
+      )
+    ])
+
+    const [access_token, refresh_token] = token
+    const { iat, exp } = await this.decodeRefreshToken(refresh_token)
+    await databaseServices.tokens.insertOne(
+      new Token({
+        user_id: new ObjectId(user_id),
+        token: refresh_token,
+        type: tokenType.RefreshToken,
+        expires_at: new Date((exp as number) * 1000),
+        created_at: new Date((iat as number) * 1000)
+      })
+    )
+    return {
+      access_token,
+      refresh_token
+    }
   }
 }
 
