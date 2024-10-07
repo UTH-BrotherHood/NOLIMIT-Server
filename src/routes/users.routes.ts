@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import {
+  changePasswordController,
   forgotPasswordController,
   loginController,
   logoutController,
@@ -14,6 +15,7 @@ import {
 import { filterMiddleware } from '~/middlewares/common.middlewares'
 import {
   accessTokenValidation,
+  changePasswordValidation,
   emailVerifyTokenValidation,
   forgotPasswordValidation,
   loginValidation,
@@ -104,7 +106,6 @@ Body: { }
 */
 usersRouters.post('/forgot-password', forgotPasswordValidation, wrapRequestHandler(forgotPasswordController))
 
-
 /*
 Description: Verify email when user click on the link in the email to reset password
 Path: /verify-forgot-password
@@ -124,3 +125,18 @@ Method: POST
 Body: { forgot_password_token : string , password : string , confirm_password : string }
 */
 usersRouters.post('/reset-password', resetPasswordValidation, wrapRequestHandler(resetPasswordController))
+
+/*
+Description: change password
+Path: /change-password
+Headers: { Authorization : Bearer <accessToken> }
+Method: PUT
+Body : { old_password : string , new_password : string , confirm_password : string }
+*/
+usersRouters.put(
+  '/change-password',
+  accessTokenValidation,
+  verifiedUserValidation,
+  changePasswordValidation,
+  wrapRequestHandler(changePasswordController)
+)
