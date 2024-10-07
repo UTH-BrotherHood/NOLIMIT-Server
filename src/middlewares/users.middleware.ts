@@ -13,6 +13,7 @@ import { TokenPayload } from '~/models/requests/users.requests'
 import { userVerificationStatus } from '~/constants/enums'
 import databaseServices from '~/services/database.services'
 import { ObjectId } from 'mongodb'
+import bcrypt from 'bcrypt'
 
 const usernameSchema: ParamSchema = {
   optional: true,
@@ -401,4 +402,34 @@ export const resetPasswordValidation = validate(
     confirm_password: confirmPasswordSchema,
     forgot_password_token: forgotPasswordToken
   })
+)
+
+export const changePasswordValidation = validate(
+  checkSchema(
+    {
+      old_password: {
+        ...passwordShema,
+        custom: {
+          options: async (value: string, { req }) => {
+            const { user_id } = (req as Request).decoded_authorization as TokenPayload
+            const user = await databaseServices.users.findOne({ _id: new ObjectId(user_id) })
+            if (!user) {
+              throw new ErrorWithStatus({
+                message: USERS_MESSAGES.USER_NOT_FOUND,
+                status: HTTP_STATUS.NOT_FOUND
+              })
+            }
+            const { password } = user
+            const isPasswordMatch = await bcrypt.compare(value, password)
+            if (!isPasswordMatch) {
+              throw new Error(USERS_MESSAGES.OLD_PASSWORD_INCORRECT)
+            }
+          }
+        }
+      },
+      password: passwordShema,
+      confirm_password: confirmPasswordSchema
+    },
+    ['body']
+  )
 )
