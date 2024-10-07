@@ -76,6 +76,20 @@ class UsersService {
     })
   }
 
+  private signForgotPasswordToken({ user_id, verify }: { user_id: string; verify: userVerificationStatus }) {
+    return signToken({
+      payload: {
+        user_id,
+        token_type: tokenType.EmailVerificationToken,
+        verify
+      },
+      privateKey: envConfig.jwtSecretForgotPassToken,
+      options: {
+        expiresIn: envConfig.forgotPasswordTokenExpiresIn
+      }
+    })
+  }
+
   private decodeEmailVerifyToken(email_verify_token: string) {
     return verifyToken({
       token: email_verify_token,
@@ -361,6 +375,54 @@ class UsersService {
     )
     return {
       message: USERS_MESSAGES.RESEND_VERIFY_EMAIL_SUCCESSFULLY
+    }
+  }
+
+  async forgotPassword({
+    user_id,
+    verify,
+    email,
+    username
+  }: {
+    user_id: string
+    verify: userVerificationStatus
+    email: string
+    username: string
+  }) {
+    const forgot_password_token = await this.signForgotPasswordToken({
+      user_id,
+      verify
+    })
+    await databaseServices.users.updateOne(
+      { _id: new ObjectId(user_id) },
+      {
+        $set: {
+          forgot_password: forgot_password_token
+        },
+        $currentDate: { updated_at: true }
+      }
+    )
+    // gửi email chứa link reset password đến email của user : http://localhost:3000/reset-password?token=forgot_password_token
+    // sendForgotPassWordEmail(email, username, forgot_password_token)
+    console.log('Forgot password token : ', forgot_password_token)
+    return {
+      message: USERS_MESSAGES.CHECK_EMAIL_TO_RESET_PASSWORD
+    }
+  }
+
+  async resetPassword(user_id: string, password: string) {
+    databaseServices.users.updateOne(
+      { _id: new ObjectId(user_id) },
+      {
+        $set: {
+          password: await bcrypt.hash(password, 10),
+          forgot_password_token: ''
+        },
+        $currentDate: { updated_at: true }
+      }
+    )
+    return {
+      message: USERS_MESSAGES.RESET_PASSWORD_SUCCESSFULLY
     }
   }
 }
