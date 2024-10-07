@@ -36,3 +36,14 @@ export interface RefreshTokenReqBody {
 export interface EmailVerifyReqBody {
   email_verification_token: string
 }
+export interface ForgotPasswordReqBody {
+  email: string
+}
+export interface VerifyForgotPasswordReqBody {
+  forgot_password_token: string
+}
+export interface ResetPasswordReqBody {
+  password: string
+  confirm_password: string
+  forgot_password_token: string
+}
