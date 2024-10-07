@@ -5,7 +5,7 @@ interface ErrorBodyType {
   message: string
   status: number
 }
-
+// { [key: string]: string }
 type ErrorsType = Record<
   string,
   {
@@ -14,10 +14,11 @@ type ErrorsType = Record<
   }
 >
 
-export class ErrorWithStatus extends Error {
+export class ErrorWithStatus {
+  message: string
   status: number
   constructor({ message, status }: ErrorBodyType) {
-    super(message)
+    this.message = message
     this.status = status
   }
 }
@@ -28,15 +29,4 @@ export class EntityError extends ErrorWithStatus {
     super({ message, status: HTTP_STATUS.UNPROCESSABLE_ENTITY })
     this.errors = errors
   }
-}
-
-export const createValidationError = (errors: any) => {
-  const entityError = new EntityError({ message: USERS_MESSAGES.VALIDATION_ERROR, errors: {} })
-
-  for (const key in errors) {
-    const msg = errors[key]
-    entityError.errors[key] = { ...msg }
-  }
-
-  return entityError
 }

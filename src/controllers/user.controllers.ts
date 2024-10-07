@@ -123,7 +123,6 @@ export const forgotPasswordController = async (
   req: Request<ParamsDictionary, any, ForgotPasswordReqBody>,
   res: Response
 ) => {
-  console.log('req body :', req.body)
   const { _id, verify, email, username } = req.user as UserDocument
   const result = await usersService.forgotPassword({
     user_id: (_id as ObjectId).toString(),
