@@ -46,7 +46,13 @@ export const USERS_MESSAGES = {
   // Update me
   BIO_MUST_BE_STRING: 'Bio must be a string',
   BIO_LENGTH: 'Bio must be between 1 and 110 characters long',
-  UPDATE_ME_SUCCESSFULLY: 'Update me successfully'
+  UPDATE_ME_SUCCESSFULLY: 'Update me successfully',
+  // Forgot password , reset password , verify forgot password , change password
+  CHECK_EMAIL_TO_RESET_PASSWORD: 'Check your email to reset password',
+  FORGOT_PASSWORD_TOKEN_REQUIRED: 'Forgot password token is required',
+  FORGOT_PASSWORD_TOKEN_IS_INVALID: 'Forgot password token is invalid',
+  VERIFY_FORGOT_PASSWORD_SUCCESSFULLY: 'Verify forgot password successfully',
+  RESET_PASSWORD_SUCCESSFULLY: 'Reset password successfully'
 } as const
 
 export const HTTP_MESSAGES = {
