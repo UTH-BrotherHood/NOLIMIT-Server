@@ -7,13 +7,17 @@ import {
   TokenPayload,
   RefreshTokenReqBody,
   updateMeReqBody,
-  EmailVerifyReqBody
+  EmailVerifyReqBody,
+  ForgotPasswordReqBody,
+  VerifyForgotPasswordReqBody,
+  ResetPasswordReqBody
 } from '~/models/requests/users.requests'
 import databaseServices from '~/services/database.services'
 import usersService from '~/services/users.services'
 import { ObjectId } from 'mongodb'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { tokenType, userVerificationStatus } from '~/constants/enums'
+import { UserDocument } from '~/models/schemas/user.schema'
 interface CustomRequest extends Request {
   decoded_refresh_token?: TokenPayload
 }
@@ -111,5 +115,41 @@ export const resendVerifyEmailController = async (req: Request, res: Response) =
     return res.json({ message: USERS_MESSAGES.EMAIL_ALREADY_VERIFIED_BEFORE })
   }
   const result = await usersService.resendVerifyEmail(user_id, user.email, user.username)
+  return res.json(result)
+}
+
+export const forgotPasswordController = async (
+  req: Request<ParamsDictionary, any, ForgotPasswordReqBody>,
+  res: Response
+) => {
+  console.log('req body :', req.body)
+  const { _id, verify, email, username } = req.user as UserDocument
+  const result = await usersService.forgotPassword({
+    user_id: (_id as ObjectId).toString(),
+    verify,
+    email,
+    username
+  })
+  return res.json(result)
+}
+
+export const verifyForgotPasswordController = async (
+  req: Request<ParamsDictionary, any, VerifyForgotPasswordReqBody>,
+  res: Response,
+  next: NextFunction
+) => {
+  return res.json({
+    message: USERS_MESSAGES.VERIFY_FORGOT_PASSWORD_SUCCESSFULLY
+  })
+}
+
+export const resetPasswordController = async (
+  req: Request<ParamsDictionary, any, ResetPasswordReqBody>,
+  res: Response,
+  next: NextFunction
+) => {
+  const { user_id } = req.decoded_forgot_password_token as TokenPayload
+  const { password } = req.body
+  const result = await usersService.resetPassword(user_id, password)
   return res.json(result)
 }
