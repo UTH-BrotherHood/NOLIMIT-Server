@@ -425,6 +425,21 @@ class UsersService {
       message: USERS_MESSAGES.RESET_PASSWORD_SUCCESSFULLY
     }
   }
+
+  async changePassword(user_id: string, new_password: string) {
+    await databaseServices.users.updateOne(
+      { _id: new ObjectId(user_id) },
+      {
+        $set: {
+          password: await bcrypt.hash(new_password, 10)
+        },
+        $currentDate: { updated_at: true }
+      }
+    )
+    return {
+      message: USERS_MESSAGES.CHANGE_PASSWORD_SUCCESSFULLY
+    }
+  }
 }
 
 const usersService = new UsersService()
