@@ -10,6 +10,7 @@ import { USERS_MESSAGES } from '~/constants/messages'
 import { ObjectId } from 'mongodb'
 import { ErrorWithStatus } from '~/utils/errors'
 import HTTP_STATUS from '~/constants/httpStatus'
+import { sendForgotPassWordEmail, sendVerifyRegisterEmail } from '~/utils/mail'
 
 class UsersService {
   private signAccessToken({ user_id, verify }: { user_id: string; verify: userVerificationStatus }) {
@@ -160,10 +161,7 @@ class UsersService {
     // await databaseServices.tokens.deleteMany({ user_id: user_id, type: tokenType.RefreshToken })
 
     // Tạo email verify token (nếu có yêu cầu xác minh email)
-    // const emailVerifyToken = this.signEmailVerifyToken({
-    //   user_id: result.insertedId.toString(),
-    //   verify: newUser.verify
-    // })
+    await sendVerifyRegisterEmail(payload.email, payload.username, email_verify_token)
 
     console.info('Email Verify Token:', email_verify_token)
 
@@ -362,7 +360,7 @@ class UsersService {
       verify: userVerificationStatus.Verified
     })
     // gửi email verify token
-    // await sendVerifyRegisterEmail(email, username, email_verify_token)
+    await sendVerifyRegisterEmail(email, username, email_verify_token)
     console.log('Resend email verify token : ', email_verify_token)
     await databaseServices.tokens.updateOne(
       { user_id: new ObjectId(user_id), type: tokenType.EmailVerificationToken },
@@ -403,7 +401,7 @@ class UsersService {
       }
     )
     // gửi email chứa link reset password đến email của user : http://localhost:3000/reset-password?token=forgot_password_token
-    // sendForgotPassWordEmail(email, username, forgot_password_token)
+    await sendForgotPassWordEmail(email, username, forgot_password_token)
     console.log('Forgot password token : ', forgot_password_token)
     return {
       message: USERS_MESSAGES.CHECK_EMAIL_TO_RESET_PASSWORD
