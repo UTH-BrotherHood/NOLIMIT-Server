@@ -25,4 +25,6 @@ export const envConfig = {
   emailVerifyTokenExpiresIn: process.env.JWT_EXPIRES_IN_EMAIL_VERIFY_TOKEN as string,
   jwtSecretForgotPassToken: process.env.JWT_SECRET_FORGOT_PASS_TOKEN as string,
   forgotPasswordTokenExpiresIn: process.env.JWT_EXPIRES_IN_FORGOT_PASS_TOKEN as string,
+  resendApiKey: process.env.RESEND_API_KEY as string,
+  resendFromAddress: process.env.RESEND_FROM_ADDRESS as string
 } as const
