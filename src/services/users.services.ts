@@ -438,6 +438,32 @@ class UsersService {
       message: USERS_MESSAGES.CHANGE_PASSWORD_SUCCESSFULLY
     }
   }
+
+  async getMe(user_id: string) {
+    const user = await databaseServices.users.findOne({ _id: new ObjectId(user_id) })
+    if (!user) {
+      throw new ErrorWithStatus({
+        message: USERS_MESSAGES.USER_NOT_FOUND,
+        status: HTTP_STATUS.NOT_FOUND
+      })
+    }
+    const result = await databaseServices.users
+      .aggregate([
+        {
+          $match: {
+            _id: new ObjectId(user_id)
+          }
+        },
+        {
+          $project: {
+            password: 0,
+            forgot_password: 0
+          }
+        }
+      ])
+      .toArray()
+    return { ...result[0] }
+  }
 }
 
 const usersService = new UsersService()

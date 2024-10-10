@@ -4,6 +4,7 @@ import {
   forgotPasswordController,
   loginController,
   logoutController,
+  meController,
   refreshTokenController,
   registerController,
   resendVerifyEmailController,
@@ -140,3 +141,11 @@ usersRouters.put(
   changePasswordValidation,
   wrapRequestHandler(changePasswordController)
 )
+
+/*
+Description: Get my profile
+Path: /me
+Headers: { Authorization : Bearer <accessToken> }
+Method: GET
+*/
+usersRouters.get('/me', accessTokenValidation, wrapRequestHandler(meController))

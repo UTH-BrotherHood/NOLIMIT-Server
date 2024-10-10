@@ -55,6 +55,8 @@ export const USERS_MESSAGES = {
   RESET_PASSWORD_SUCCESSFULLY: 'Reset password successfully',
   OLD_PASSWORD_INCORRECT: 'Old password is incorrect',
   CHANGE_PASSWORD_SUCCESSFULLY: 'Change password successfully',
+  // get me
+  GET_ME_SUCCESSFULLY: 'Get me successfully',
 } as const
 
 export const HTTP_MESSAGES = {
