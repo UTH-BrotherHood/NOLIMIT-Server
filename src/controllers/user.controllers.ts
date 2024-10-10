@@ -77,7 +77,7 @@ export const updateMeController = async (
   const user = await usersService.updateMe(user_id, body)
   return res.json({
     message: USERS_MESSAGES.UPDATE_ME_SUCCESSFULLY,
-    result: user
+    data: user
   })
 }
 
@@ -163,4 +163,13 @@ export const changePasswordController = async (
   const { password } = req.body
   const result = await usersService.changePassword(user_id, password)
   return res.json(result)
+}
+
+export const meController = async (req: Request, res: Response, next: NextFunction) => {
+  const { user_id } = req.decoded_authorization as TokenPayload
+  const user = await usersService.getMe(user_id)
+  return res.json({
+    message: USERS_MESSAGES.GET_ME_SUCCESSFULLY,
+    data: user
+  })
 }
