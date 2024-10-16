@@ -10,6 +10,7 @@ const UserSchema = new Schema({
     trim: true,
     unique: true,
     match: NAME_REGEXP,
+    required: true,
     index: true
   },
   email: {

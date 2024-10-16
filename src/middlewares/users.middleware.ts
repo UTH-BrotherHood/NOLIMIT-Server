@@ -16,7 +16,6 @@ import { ObjectId } from 'mongodb'
 import bcrypt from 'bcrypt'
 
 const usernameSchema: ParamSchema = {
-  optional: true,
   notEmpty: {
     errorMessage: USERS_MESSAGES.NAME_REQUIRED
   },
@@ -170,7 +169,6 @@ export const registerValidation = validate(
         isEmail: {
           errorMessage: USERS_MESSAGES.EMAIL_INVALID
         },
-        // normalizeEmail: true,
         custom: {
           options: async (value) => {
             const isEmailExist = await usersService.checkEmailExist(value)
