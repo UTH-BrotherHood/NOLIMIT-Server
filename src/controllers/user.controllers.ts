@@ -19,6 +19,9 @@ import { ObjectId } from 'mongodb'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { tokenType, userVerificationStatus } from '~/constants/enums'
 import { UserDocument } from '~/models/schemas/user.schema'
+import { envConfig } from '~/constants/config'
+// import queryString from 'query-string';
+
 interface CustomRequest extends Request {
   decoded_refresh_token?: TokenPayload
 }
@@ -38,6 +41,30 @@ export const loginController = async (req: Request<ParamsDictionary, any, LoginR
     data: result
   })
 }
+
+export const googleLoginController = async (req: Request, res: Response) => {
+  const queryString = (await import('querystring')).default
+
+  try {
+    const user = req.user as UserDocument;
+
+    const { access_token, refresh_token } = await usersService.googleLogin(user);
+
+    const qs = queryString.stringify({
+      access_token,
+      refresh_token,
+      status: 200
+    })
+    res.redirect(`${envConfig.googleRedirectClientUrl}?${qs}`)
+  } catch (error: any) {
+    const { message = 'Lỗi không xác định', status = 500 } = error
+    const qs = queryString.stringify({
+      message,
+      status
+    })
+    res.redirect(`${envConfig.googleRedirectClientUrl}?${qs}`)
+  }
+};
 
 export const logoutController = async (
   req: Request<ParamsDictionary, any, { refresh_token: string }>,
