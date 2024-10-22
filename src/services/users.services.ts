@@ -1,5 +1,5 @@
 import { LoginReqBody, RegisterReqBody, updateMeReqBody } from '~/models/requests/users.requests'
-import User from '~/models/schemas/user.schema'
+import User, { UserDocument } from '~/models/schemas/user.schema'
 import databaseServices from '~/services/database.services'
 import bcrypt from 'bcrypt'
 import { signToken, verifyToken } from '~/utils/tokens'
@@ -98,14 +98,14 @@ class UsersService {
     })
   }
 
-  private decodeRefreshToken(refresh_token: string) {
+  async decodeRefreshToken(refresh_token: string) {
     return verifyToken({
       token: refresh_token,
       secretOrPublickey: envConfig.jwtSecretRefreshToken
     })
   }
 
-  private signAccessAndRefreshToken({ user_id, verify }: { user_id: string; verify: userVerificationStatus }) {
+  async signAccessAndRefreshToken({ user_id, verify }: { user_id: string; verify: userVerificationStatus }) {
     return Promise.all([this.signAccessToken({ user_id, verify }), this.signRefreshToken({ user_id, verify })])
   }
 
@@ -284,6 +284,41 @@ class UsersService {
     return {
       access_token,
       refresh_token: new_refresh_token
+    }
+  }
+
+  async googleLogin(user: UserDocument) {
+    if (!user) {
+      throw new ErrorWithStatus({
+        status: HTTP_STATUS.UNAUTHORIZED,
+        message: USERS_MESSAGES.USER_NOT_FOUND
+      })
+    }
+
+    const [access_token, refresh_token] = await this.signAccessAndRefreshToken({
+      user_id: user ? user._id.toString() : new ObjectId().toString(),
+      verify: userVerificationStatus.Verified
+    })
+
+    await databaseServices.tokens.deleteMany({ user_id: user._id, type: tokenType.RefreshToken })
+
+    // đổi unverified thành verified
+    if (user.verify === userVerificationStatus.Unverified) {
+      await databaseServices.users.updateOne({ _id: user._id }, { $set: { verify: userVerificationStatus.Verified } })
+    }
+
+    const { exp } = await this.decodeRefreshToken(refresh_token)
+    await databaseServices.tokens.insertOne(
+      new Token({
+        user_id: user ? user._id : new ObjectId(),
+        token: refresh_token,
+        type: tokenType.RefreshToken,
+        expires_at: new Date(exp * 1000)
+      })
+    )
+    return {
+      access_token,
+      refresh_token
     }
   }
 
