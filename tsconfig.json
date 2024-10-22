@@ -10,7 +10,8 @@
     "baseUrl": ".", // Đường dẫn base cho các import
     "paths": {
       "~/*": ["src/*"] // Đường dẫn tương đối cho các import (alias)
-    }
+    },
+    "typeRoots": ["./src/types", "./node_modules/@types"], // Đường dẫn cho các type definition
   },
   "ts-node": {
     "require": ["tsconfig-paths/register"]
