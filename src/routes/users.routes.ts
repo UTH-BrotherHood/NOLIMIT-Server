@@ -2,6 +2,7 @@ import { Router } from 'express'
 import {
   changePasswordController,
   forgotPasswordController,
+  googleLoginController,
   loginController,
   logoutController,
   meController,
@@ -29,6 +30,7 @@ import {
 } from '~/middlewares/users.middleware'
 import { updateMeReqBody } from '~/models/requests/users.requests'
 import { wrapRequestHandler } from '~/utils/handlers'
+import passport from "passport";
 
 const usersRouters = Router()
 
@@ -45,6 +47,18 @@ Method: POST
 Body: { "email": "string", "password": "string"}
  */
 usersRouters.post('/login', loginValidation, wrapRequestHandler(loginController))
+
+/*
+Description: This route is used to login with google
+Method: GET
+*/
+// usersRouters.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }))
+usersRouters.get(
+  '/google',
+  passport.authenticate('google', { scope: ['profile', 'email'], session: false })
+);
+
+usersRouters.get('/google/callback', passport.authenticate('google', { session: false }), wrapRequestHandler(googleLoginController))
 
 /*
 Description: This route is used to logout
