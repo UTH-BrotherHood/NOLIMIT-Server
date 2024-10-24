@@ -342,7 +342,7 @@ export const emailVerifyTokenValidation = validate(
                 token: value,
                 secretOrPublickey: envConfig.jwtSecretEmailVerifyToken
               })
-              ;(req as Request).decoded_email_verify_token = decoded_email_verify_token
+                ; (req as Request).decoded_email_verify_token = decoded_email_verify_token
             } catch (error) {
               if (error instanceof JsonWebTokenError) {
                 throw new ErrorWithStatus({
@@ -418,6 +418,12 @@ export const changePasswordValidation = validate(
               })
             }
             const { password } = user
+            if (!password) {
+              throw new ErrorWithStatus({
+                message: USERS_MESSAGES.PASSWORD_REQUIRED,
+                status: HTTP_STATUS.BAD_REQUEST
+              })
+            }
             const isPasswordMatch = await bcrypt.compare(value, password)
             if (!isPasswordMatch) {
               throw new Error(USERS_MESSAGES.OLD_PASSWORD_INCORRECT)

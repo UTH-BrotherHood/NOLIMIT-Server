@@ -23,7 +23,15 @@ const UserSchema = new Schema({
   },
   password: {
     type: String,
-    required: true
+    required: function (this: any) {
+      // Chỉ yêu cầu mật khẩu nếu người dùng không đăng nhập bằng Google
+      return !this.googleId;
+    }
+  },
+  googleId: {
+    type: String, // Google ID
+    unique: true,
+    sparse: true // Dùng sparse để không bắt buộc phải có googleId cho người dùng thông thường
   },
   date_of_birth: { type: Date, default: Date.now },
   avatar_url: {
@@ -63,9 +71,10 @@ export interface UserDocument extends Document {
   _id: ObjectId
   username: string
   email: string
-  password: string
+  password?: string // Mật khẩu không bắt buộc nếu đăng nhập bằng Google
+  googleId?: string // ID từ Google
   date_of_birth: Date
-  avatar_url: string
+  avatar_url?: string
   bio: string
   status: string
   tag: string

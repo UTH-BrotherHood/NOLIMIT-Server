@@ -19,6 +19,7 @@ export const USERS_MESSAGES = {
   REGISTER_SUCCESSFULLY: 'Register successfully',
   REGISTER_FAILED: 'Register failed',
   LOGOUT_FAILED: 'Logout failed',
+  INVALID_USER: 'Invalid user',
   // verify email
   USER_NOT_VERIFIED: 'User not verified',
   EMAIL_ALREADY_VERIFIED_BEFORE: 'Email already verified before',
@@ -63,5 +64,6 @@ export const HTTP_MESSAGES = {
   NOT_FOUND: 'Not Found',
   INTERNAL_SERVER_ERROR: 'Internal server error',
   UNAUTHORIZED: 'Unauthorized',
-  UNKNOW_ERROR: 'Unknow error'
+  UNKNOW_ERROR: 'Unknow error',
+  INVALID_CODE: 'Invalid code',
 } as const

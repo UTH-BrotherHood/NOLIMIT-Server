@@ -26,5 +26,15 @@ export const envConfig = {
   jwtSecretForgotPassToken: process.env.JWT_SECRET_FORGOT_PASS_TOKEN as string,
   forgotPasswordTokenExpiresIn: process.env.JWT_EXPIRES_IN_FORGOT_PASS_TOKEN as string,
   resendApiKey: process.env.RESEND_API_KEY as string,
-  resendFromAddress: process.env.RESEND_FROM_ADDRESS as string
+  resendFromAddress: process.env.RESEND_FROM_ADDRESS as string,
+
+  // Google OAuth
+  googleClientId: process.env.GOOGLE_CLIENT_ID as string,
+  googleClientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+  googleCallbackURLDev: process.env.GOOGLE_CALLBACK_URL_DEV as string,
+  googleCallbackURLProd: process.env.GOOGLE_CALLBACK_URL_PROD as string,
+  googleRedirectClientUrl: process.env.GOOGLE_REDIRECT_CLIENT_URL as string,
+  // Session
+  sessionSecret: process.env.SESSION_SECRET as string,
+  nodeEnv: process.env.NODE_ENV as string
 } as const
