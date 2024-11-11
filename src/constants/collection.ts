@@ -1,4 +1,4 @@
-const Collection = {
+const collection = {
   USER: 'user', // NGUOI DUNG
   CONTACT: 'contact', // DANH BA
   MESSAGE: 'message', // TIN NHAN
@@ -17,4 +17,4 @@ const Collection = {
   CONVERSATION_SETTING: 'conversation_setting' // CÀI ĐẶT CUỘC TRÒ CHUYỆN
 }
 
-export default Collection
+export default collection

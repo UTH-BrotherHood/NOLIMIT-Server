@@ -2,7 +2,7 @@ import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { envConfig } from "~/constants/config";
 import User from "~/models/schemas/user.schema";
-import databaseServices from "~/services/database.services";
+import databaseServices from "~/services/database.service";
 
 passport.use(
     new GoogleStrategy(

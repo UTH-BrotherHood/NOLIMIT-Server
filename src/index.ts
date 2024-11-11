@@ -3,7 +3,7 @@ import express from 'express'
 import { envConfig } from '~/constants/config'
 import { defaultErrorHandler } from '~/middlewares/errors.middleware'
 import rootRouterV1 from '~/routes'
-import databaseServices from '~/services/database.services'
+import databaseServices from '~/services/database.service'
 import cors from 'cors'
 import passport from "passport";
 import "~/utils/passport";
