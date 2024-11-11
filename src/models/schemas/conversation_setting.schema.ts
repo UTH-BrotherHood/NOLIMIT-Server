@@ -1,17 +1,17 @@
 import { Schema, model, Document } from 'mongoose'
-import Collection from '~/constants/collection'
+import collection from '~/constants/collection'
 import { ConversationDocument } from '~/models/schemas/conversation.schema'
 import { UserDocument } from '~/models/schemas/user.schema'
 
 const ConversationSettingsSchema = new Schema({
   conversation_id: {
     type: Schema.Types.ObjectId,
-    ref: Collection.CONVERSATION,
+    ref: collection.CONVERSATION,
     required: true
   },
   user_id: {
     type: Schema.Types.ObjectId,
-    ref: Collection.USER,
+    ref: collection.USER,
     required: true
   },
   is_muted: {
@@ -32,6 +32,6 @@ export interface ConversationSettingsDocument extends Document {
 }
 
 export const ConversationSettings = model<ConversationSettingsDocument>(
-  Collection.CONVERSATION_SETTING,
+  collection.CONVERSATION_SETTING,
   ConversationSettingsSchema
 )

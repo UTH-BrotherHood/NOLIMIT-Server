@@ -1,16 +1,16 @@
 import { Schema, model, Document } from 'mongoose'
-import Collection from '~/constants/collection'
+import collection from '~/constants/collection'
 import { UserDocument } from '~/models/schemas/user.schema'
 
 const ContactSchema = new Schema({
   user_id: {
     type: Schema.Types.ObjectId,
-    ref: Collection.USER,
+    ref: collection.USER,
     required: true
   },
   contact_user_id: {
     type: Schema.Types.ObjectId,
-    ref: Collection.USER,
+    ref: collection.USER,
     required: true
   },
   nickname: {
@@ -35,4 +35,4 @@ export interface ContactDocument extends Document {
   created_at: Date
 }
 
-export const Contact = model<ContactDocument>(Collection.CONTACT, ContactSchema)
+export const Contact = model<ContactDocument>(collection.CONTACT, ContactSchema)

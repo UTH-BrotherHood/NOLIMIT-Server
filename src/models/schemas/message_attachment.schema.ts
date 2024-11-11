@@ -1,17 +1,17 @@
 import { Schema, model, Document } from 'mongoose'
-import Collection from '~/constants/collection'
+import collection from '~/constants/collection'
 import { MessageDocument } from '~/models/schemas/message.schema'
 import { AttachmentDocument } from '~/models/schemas/attachment.schema'
 
 const MessageAttachmentSchema = new Schema({
   message_id: {
     type: Schema.Types.ObjectId,
-    ref: Collection.MESSAGE,
+    ref: collection.MESSAGE,
     required: true
   },
   attachment_id: {
     type: Schema.Types.ObjectId,
-    ref: Collection.ATTACHMENT,
+    ref: collection.ATTACHMENT,
     required: true
   },
   created_at: {
@@ -29,6 +29,6 @@ export interface MessageAttachmentDocument extends Document {
 
 // Tạo model cho MessageAttachment
 export const MessageAttachment = model<MessageAttachmentDocument>(
-  Collection.MESSAGE_ATTACHMENT,
+  collection.MESSAGE_ATTACHMENT,
   MessageAttachmentSchema
 )

@@ -1,17 +1,17 @@
 import { Schema, model, Document } from 'mongoose'
-import Collection from '~/constants/collection'
+import collection from '~/constants/collection'
 import { ConversationDocument } from '~/models/schemas/conversation.schema'
 import { UserDocument } from '~/models/schemas/user.schema'
 
 const MessageSchema = new Schema({
   conversation_id: {
     type: Schema.Types.ObjectId,
-    ref: Collection.CONVERSATION,
+    ref: collection.CONVERSATION,
     required: true
   },
   sender_id: {
     type: Schema.Types.ObjectId,
-    ref: Collection.USER,
+    ref: collection.USER,
     required: true
   },
   message_content: {
@@ -30,7 +30,7 @@ const MessageSchema = new Schema({
   read_by: [
     {
       type: Schema.Types.ObjectId,
-      ref: Collection.USER
+      ref: collection.USER
     }
   ],
   created_at: {
@@ -54,4 +54,4 @@ export interface MessageDocument extends Document {
   updated_at: Date
 }
 
-export const Message = model<MessageDocument>(Collection.MESSAGE, MessageSchema)
+export const Message = model<MessageDocument>(collection.MESSAGE, MessageSchema)

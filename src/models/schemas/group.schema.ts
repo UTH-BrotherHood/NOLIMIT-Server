@@ -1,5 +1,5 @@
 import { Schema, model, Document } from 'mongoose'
-import Collection from '~/constants/collection'
+import collection from '~/constants/collection'
 import { NAME_REGEXP } from '~/constants/regex'
 
 const GroupSchema = new Schema({
@@ -16,7 +16,7 @@ const GroupSchema = new Schema({
   },
   creator: {
     type: Schema.Types.ObjectId,
-    ref: Collection.USER,
+    ref: collection.USER,
     required: true
   },
   // lưu trữ thông báo của nhóm (group).
@@ -27,7 +27,7 @@ const GroupSchema = new Schema({
   members: [
     {
       type: [Schema.Types.ObjectId],
-      ref: Collection.USER,
+      ref: collection.USER,
       required: true
     }
   ],
@@ -45,6 +45,6 @@ export interface GroupDocument extends Document {
   updated_at: Date
 }
 
-const Group = model<GroupDocument>(Collection.GROUP, GroupSchema)
+const Group = model<GroupDocument>(collection.GROUP, GroupSchema)
 
 export default Group

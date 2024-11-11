@@ -1,11 +1,11 @@
 import { Schema, model, Document } from 'mongoose'
-import Collection from '~/constants/collection'
+import collection from '~/constants/collection'
 import { UserDocument } from '~/models/schemas/user.schema'
 
 const NotificationSchema = new Schema({
   sender_id: {
     type: Schema.Types.ObjectId,
-    ref: Collection.USER,
+    ref: collection.USER,
     default: null
   },
   type: {
@@ -29,4 +29,4 @@ export interface NotificationDocument extends Document {
   created_at: Date // Ngày tạo thông báo
 }
 
-export const Notification = model<NotificationDocument>(Collection.NOTIFICATION, NotificationSchema)
+export const Notification = model<NotificationDocument>(collection.NOTIFICATION, NotificationSchema)

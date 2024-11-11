@@ -1,5 +1,5 @@
 import { Schema, model, Document } from 'mongoose'
-import Collection from '~/constants/collection'
+import collection from '~/constants/collection'
 import { GroupDocument } from '~/models/schemas/group.schema'
 import { UserDocument } from '~/models/schemas/user.schema'
 
@@ -8,7 +8,7 @@ const ConversationSchema = new Schema({
   is_group: { type: Boolean, default: false },
   group_id: {
     type: Schema.Types.ObjectId,
-    ref: Collection.GROUP,
+    ref: collection.GROUP,
     required: function (this: any) {
       return this.is_group
     }
@@ -16,7 +16,7 @@ const ConversationSchema = new Schema({
   participants: [
     {
       type: Schema.Types.ObjectId,
-      ref: Collection.USER,
+      ref: collection.USER,
       required: true
     }
   ],
@@ -39,6 +39,6 @@ export interface ConversationDocument extends Document {
   updated_at: Date
 }
 
-const Conversation = model<ConversationDocument>(Collection.CONVERSATION, ConversationSchema)
+const Conversation = model<ConversationDocument>(collection.CONVERSATION, ConversationSchema)
 
 export default Conversation

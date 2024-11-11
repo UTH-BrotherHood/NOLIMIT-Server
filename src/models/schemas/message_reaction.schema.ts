@@ -1,5 +1,5 @@
 import { Schema, model, Document } from 'mongoose'
-import Collection from '~/constants/collection'
+import collection from '~/constants/collection'
 import { MessageDocument } from '~/models/schemas/message.schema'
 import { ReactionDocument } from '~/models/schemas/reaction.schema'
 import { UserDocument } from '~/models/schemas/user.schema'
@@ -7,17 +7,17 @@ import { UserDocument } from '~/models/schemas/user.schema'
 const MessageReactionSchema = new Schema({
   message_id: {
     type: Schema.Types.ObjectId,
-    ref: Collection.MESSAGE,
+    ref: collection.MESSAGE,
     required: true
   },
   user_id: {
     type: Schema.Types.ObjectId,
-    ref: Collection.USER,
+    ref: collection.USER,
     required: true
   },
   reaction_id: {
     type: Schema.Types.ObjectId,
-    ref: Collection.REACTION,
+    ref: collection.REACTION,
     required: true
   },
   created_at: {
@@ -33,4 +33,4 @@ export interface MessageReactionDocument extends Document {
   created_at: Date
 }
 
-export const MessageReaction = model<MessageReactionDocument>(Collection.MESSAGE_REACTION, MessageReactionSchema)
+export const MessageReaction = model<MessageReactionDocument>(collection.MESSAGE_REACTION, MessageReactionSchema)
