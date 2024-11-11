@@ -13,8 +13,8 @@ import {
   ResetPasswordReqBody,
   ChangePasswordReqBody
 } from '~/models/requests/users.requests'
-import databaseServices from '~/services/database.services'
-import usersService from '~/services/users.services'
+import databaseServices from '~/services/database.service'
+import usersService from '~/services/users.service'
 import { ObjectId } from 'mongodb'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { tokenType, userVerificationStatus } from '~/constants/enums'
