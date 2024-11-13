@@ -3,6 +3,7 @@ const collection = {
   CONTACT: 'contact', // DANH BA
   MESSAGE: 'message', // TIN NHAN
   CONVERSATION: 'conversation', // CUOC TRO CHUYEN
+  PARTICIPANT: 'participant', // NGUOI THAM GIA CUOC TRO CHUYEN
   GROUP: 'group', // NHOM TRO CHUYEN
   NOTIFICATION: 'notification', // THONG BAO
   ATTACHMENT: 'attachment', // TEP DINH KEM
