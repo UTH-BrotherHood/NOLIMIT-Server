@@ -4,7 +4,11 @@ import { GroupDocument } from '~/models/schemas/group.schema'
 import { UserDocument } from '~/models/schemas/user.schema'
 
 const ConversationSchema = new Schema({
-  conversation_name: { type: String, default: '' },
+  conversation_name: {
+    type: Schema.Types.Mixed, // Có thể là một chuỗi hoặc một đối tượng.
+    required: true,
+    default: '',
+  },
   is_group: { type: Boolean, default: false },
   group_id: {
     type: Schema.Types.ObjectId,
@@ -13,13 +17,11 @@ const ConversationSchema = new Schema({
       return this.is_group
     }
   },
-  participants: [
-    {
-      type: Schema.Types.ObjectId,
-      ref: collection.USER,
-      required: true
-    }
-  ],
+  creator: {
+    type: Schema.Types.ObjectId,
+    ref: collection.USER,
+    required: true,
+  },
   created_at: {
     type: Date,
     default: Date.now
@@ -34,7 +36,7 @@ export interface ConversationDocument extends Document {
   conversation_name: string
   is_group: boolean
   group_id?: GroupDocument['_id']
-  participants: UserDocument['_id'][]
+  creator: UserDocument['_id']
   created_at: Date
   updated_at: Date
 }
