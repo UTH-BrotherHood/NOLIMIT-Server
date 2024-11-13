@@ -1,11 +1,11 @@
 import { Schema, model, Document } from 'mongoose'
-import Collection from '~/constants/collection'
+import collection from '~/constants/collection'
 import { UserDocument } from '~/models/schemas/user.schema'
 
 const TokenSchema = new Schema({
   user_id: {
     type: Schema.Types.ObjectId,
-    ref: Collection.USER,
+    ref: collection.USER,
     required: true
   },
   token: {
@@ -34,4 +34,4 @@ export interface TokenDocument extends Document {
   created_at: Date // Thời gian tạo token
 }
 
-export const Token = model<TokenDocument>(Collection.TOKEN, TokenSchema)
+export const Token = model<TokenDocument>(collection.TOKEN, TokenSchema)

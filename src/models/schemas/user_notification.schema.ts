@@ -1,17 +1,17 @@
 import { Schema, model, Document } from 'mongoose'
-import Collection from '~/constants/collection'
+import collection from '~/constants/collection'
 import { NotificationDocument } from '~/models/schemas/notification.schema'
 import { UserDocument } from '~/models/schemas/user.schema'
 
 const UserNotificationSchema = new Schema({
   notification_id: {
     type: Schema.Types.ObjectId,
-    ref: Collection.NOTIFICATION,
+    ref: collection.NOTIFICATION,
     required: true
   },
   recipient_id: {
     type: Schema.Types.ObjectId,
-    ref: Collection.USER,
+    ref: collection.USER,
     required: true
   },
   is_read: {
@@ -31,4 +31,4 @@ export interface UserNotificationDocument extends Document {
   created_at: Date
 }
 
-export const UserNotification = model<UserNotificationDocument>(Collection.USER_NOTIFICATION, UserNotificationSchema)
+export const UserNotification = model<UserNotificationDocument>(collection.USER_NOTIFICATION, UserNotificationSchema)

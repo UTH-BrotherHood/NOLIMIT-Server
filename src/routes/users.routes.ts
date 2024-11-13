@@ -13,7 +13,7 @@ import {
   updateMeController,
   verifyEmailController,
   verifyForgotPasswordController
-} from '~/controllers/user.controllers'
+} from '~/controllers/user.controller'
 import { filterMiddleware } from '~/middlewares/common.middlewares'
 import {
   accessTokenValidation,
@@ -110,8 +110,6 @@ Body: { }
 */
 usersRouters.post('/resend-verify-email', accessTokenValidation, wrapRequestHandler(resendVerifyEmailController))
 
-export default usersRouters
-
 /*
 Description: Submit email to reset password , send email to user
 Path: /forgot-password
@@ -163,3 +161,5 @@ Headers: { Authorization : Bearer <accessToken> }
 Method: GET
 */
 usersRouters.get('/me', accessTokenValidation, wrapRequestHandler(meController))
+
+export default usersRouters

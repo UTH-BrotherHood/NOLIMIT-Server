@@ -67,3 +67,51 @@ export const HTTP_MESSAGES = {
   UNKNOW_ERROR: 'Unknow error',
   INVALID_CODE: 'Invalid code',
 } as const
+
+export const CONVERSATION_MESSAGES = {
+  CREATE_CONVERSATION_SUCCESSFULLY: 'Create conversation successfully',
+  CONVERSATION_NOT_FOUND: 'Conversation not found',
+  CONVERSATION_ALREADY_EXIST: 'Conversation already exist',
+  CONVERSATION_ID_REQUIRED: 'Conversation ID is required',
+  CONVERSATION_ID_MUST_BE_STRING: 'Conversation ID must be a string',
+  CONVERSATION_ID_INVALID: 'Conversation ID is invalid',
+  CONVERSATION_TYPE_REQUIRED: 'Conversation type is required',
+  CONVERSATION_TYPE_MUST_BE_STRING: 'Conversation type must be a string',
+  CONVERSATION_TYPE_INVALID: 'Conversation type is invalid',
+  GET_CONVERSATION_SUCCESSFULLY: 'Get conversation successfully',
+  GET_CONVERSATIONS_SUCCESSFULLY: 'Get conversations successfully',
+  DELETE_CONVERSATION_SUCCESSFULLY: 'Delete conversation successfully',
+  // Participants
+  USER_ALREADY_IN_CONVERSATION: 'User already in conversation',
+  USER_NOT_IN_CONVERSATION: 'User not in conversation',
+} as const
+
+export const GROUP_MESSAGES = {
+  CREATE_GROUP_SUCCESSFULLY: 'Create group successfully',
+  GROUP_NOT_FOUND: 'Group not found',
+  GROUP_ALREADY_EXIST: 'Group already exist',
+  GROUP_ID_REQUIRED: 'Group ID is required',
+  GROUP_ID_MUST_BE_STRING: 'Group ID must be a string',
+  GROUP_ID_INVALID: 'Group ID is invalid',
+  GROUP_NAME_REQUIRED: 'Group name is required',
+  GROUP_NAME_MUST_BE_STRING: 'Group name must be a string',
+  GROUP_NAME_LENGTH: 'Group name must be between 1 and 100 characters long',
+  GROUP_NOT_FOUND_OR_USER_NOT_IN_GROUP: 'Group not found or user not in group',
+  USER_NOT_IN_GROUP: 'User not in group',
+  USER_ALREADY_IN_GROUP: 'User already in group',
+  ADD_USER_TO_GROUP_SUCCESSFULLY: 'Add user to group successfully',
+  REMOVE_USER_FROM_GROUP_SUCCESSFULLY: 'Remove user from group successfully',
+} as const
+
+export const PARTICIPANTS_MESSAGES = {
+  CREATE_PARTICIPANT_SUCCESSFULLY: 'Create participant successfully',
+  ADD_PARTICIPANT_SUCCESSFULLY: 'Add participant successfully',
+  PARTICIPANT_NOT_FOUND: 'Participant not found',
+  PARTICIPANT_ALREADY_EXIST: 'Participant already exist',
+  PARTICIPANT_ID_REQUIRED: 'Participant ID is required',
+  PARTICIPANT_ID_MUST_BE_STRING: 'Participant ID must be a string',
+  PARTICIPANT_ID_INVALID: 'Participant ID is invalid',
+  PARTICIPANT_ROLE_REQUIRED: 'Participant role is required',
+  PARTICIPANT_ROLE_MUST_BE_STRING: 'Participant role must be a string',
+  PARTICIPANT_ROLE_INVALID: 'Participant role is invalid',
+} as const

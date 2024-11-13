@@ -1,14 +1,15 @@
 import { Schema, model, Document } from 'mongoose'
-import Collection from '~/constants/collection'
+import collection from '~/constants/collection'
 import { NAME_REGEXP } from '~/constants/regex'
+import { UserDocument } from './user.schema'
 
 const GroupSchema = new Schema({
   name: {
     type: String,
     trim: true,
-    unique: true,
     match: NAME_REGEXP,
-    index: true
+    index: true,
+    required: true
   },
   avatar_url: {
     type: String,
@@ -16,7 +17,7 @@ const GroupSchema = new Schema({
   },
   creator: {
     type: Schema.Types.ObjectId,
-    ref: Collection.USER,
+    ref: collection.USER,
     required: true
   },
   // lưu trữ thông báo của nhóm (group).
@@ -24,27 +25,19 @@ const GroupSchema = new Schema({
     type: String,
     default: ''
   },
-  members: [
-    {
-      type: [Schema.Types.ObjectId],
-      ref: Collection.USER,
-      required: true
-    }
-  ],
   created_at: { type: Date, default: Date.now },
   updated_at: { type: Date, default: Date.now }
 })
 
 export interface GroupDocument extends Document {
   name: string
-  avatar: string
+  avatar_url: string
   announcement: string
-  creator: string
-  members: string[]
+  creator: UserDocument['_id'],
   created_at: Date
   updated_at: Date
 }
 
-const Group = model<GroupDocument>(Collection.GROUP, GroupSchema)
+const Group = model<GroupDocument>(collection.GROUP, GroupSchema)
 
 export default Group

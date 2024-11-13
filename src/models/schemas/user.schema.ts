@@ -1,5 +1,5 @@
 import { Schema, model, Document } from 'mongoose'
-import Collection from '~/constants/collection'
+import collection from '~/constants/collection'
 import { userVerificationStatus } from '~/constants/enums'
 import { EMAIL_REGEXP, NAME_REGEXP } from '~/constants/regex'
 import { ObjectId } from 'mongodb'
@@ -85,6 +85,6 @@ export interface UserDocument extends Document {
   lastLoginTime: Date
 }
 
-const User = model<UserDocument>(Collection.USER, UserSchema)
+const User = model<UserDocument>(collection.USER, UserSchema)
 
 export default User

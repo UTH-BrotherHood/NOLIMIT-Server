@@ -1,6 +1,6 @@
 import { LoginReqBody, RegisterReqBody, updateMeReqBody } from '~/models/requests/users.requests'
 import User, { UserDocument } from '~/models/schemas/user.schema'
-import databaseServices from '~/services/database.services'
+import databaseServices from '~/services/database.service'
 import bcrypt from 'bcrypt'
 import { signToken, verifyToken } from '~/utils/tokens'
 import { envConfig } from '~/constants/config'

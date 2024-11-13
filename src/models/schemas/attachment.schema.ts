@@ -1,5 +1,5 @@
 import { Schema, model, Document } from 'mongoose'
-import Collection from '~/constants/collection'
+import collection from '~/constants/collection'
 
 const AttachmentSchema = new Schema({
   attachment_type: {
@@ -24,4 +24,4 @@ export interface AttachmentDocument extends Document {
 }
 
 // Tạo model cho Attachment
-export const Attachment = model<AttachmentDocument>(Collection.ATTACHMENT, AttachmentSchema)
+export const Attachment = model<AttachmentDocument>(collection.ATTACHMENT, AttachmentSchema)

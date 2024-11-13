@@ -1,5 +1,9 @@
 import { Collection, Db, MongoClient } from 'mongodb'
+import collection from '~/constants/collection'
 import { envConfig } from '~/constants/config'
+import { ConversationDocument } from '~/models/schemas/conversation.schema'
+import { GroupDocument } from '~/models/schemas/group.schema'
+import { ParticipantDocument } from '~/models/schemas/participants.schema'
 import { TokenDocument } from '~/models/schemas/token.schema'
 import { UserDocument } from '~/models/schemas/user.schema'
 
@@ -26,11 +30,23 @@ class DatabaseServices {
   }
 
   get users(): Collection<UserDocument> {
-    return this.db.collection(envConfig.dbUsersCollection)
+    return this.db.collection(collection.USER)
   }
 
   get tokens(): Collection<TokenDocument> {
-    return this.db.collection(envConfig.dbTokensCollection)
+    return this.db.collection(collection.TOKEN)
+  }
+
+  get conversations(): Collection<ConversationDocument> {
+    return this.db.collection(collection.CONVERSATION)
+  }
+
+  get groups(): Collection<GroupDocument> {
+    return this.db.collection(collection.GROUP)
+  }
+
+  get participants(): Collection<any> { // Change any to ParticipantDocument // để tạm any chứ sợ không kịp
+    return this.db.collection(collection.PARTICIPANT)
   }
 }
 const databaseServices = new DatabaseServices()

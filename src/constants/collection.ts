@@ -1,8 +1,9 @@
-const Collection = {
+const collection = {
   USER: 'user', // NGUOI DUNG
   CONTACT: 'contact', // DANH BA
   MESSAGE: 'message', // TIN NHAN
   CONVERSATION: 'conversation', // CUOC TRO CHUYEN
+  PARTICIPANT: 'participant', // NGUOI THAM GIA CUOC TRO CHUYEN
   GROUP: 'group', // NHOM TRO CHUYEN
   NOTIFICATION: 'notification', // THONG BAO
   ATTACHMENT: 'attachment', // TEP DINH KEM
@@ -17,4 +18,4 @@ const Collection = {
   CONVERSATION_SETTING: 'conversation_setting' // CÀI ĐẶT CUỘC TRÒ CHUYỆN
 }
 
-export default Collection
+export default collection
