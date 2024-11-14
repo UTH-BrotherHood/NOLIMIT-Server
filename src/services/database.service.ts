@@ -3,6 +3,7 @@ import collection from '~/constants/collection'
 import { envConfig } from '~/constants/config'
 import { ConversationDocument } from '~/models/schemas/conversation.schema'
 import { GroupDocument } from '~/models/schemas/group.schema'
+import { MessageDocument } from '~/models/schemas/message.schema'
 import { ParticipantDocument } from '~/models/schemas/participants.schema'
 import { TokenDocument } from '~/models/schemas/token.schema'
 import { UserDocument } from '~/models/schemas/user.schema'
@@ -47,6 +48,10 @@ class DatabaseServices {
 
   get participants(): Collection<any> { // Change any to ParticipantDocument // để tạm any chứ sợ không kịp
     return this.db.collection(collection.PARTICIPANT)
+  }
+
+  get messages(): Collection<MessageDocument> { // Change any to MessageDocument 
+    return this.db.collection(collection.MESSAGE)
   }
 }
 const databaseServices = new DatabaseServices()
