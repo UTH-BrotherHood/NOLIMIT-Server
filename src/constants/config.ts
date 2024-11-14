@@ -32,7 +32,11 @@ export const envConfig = {
   googleCallbackURLDev: process.env.GOOGLE_CALLBACK_URL_DEV as string,
   googleCallbackURLProd: process.env.GOOGLE_CALLBACK_URL_PROD as string,
   googleRedirectClientUrl: process.env.GOOGLE_REDIRECT_CLIENT_URL as string,
+
   // Session
   sessionSecret: process.env.SESSION_SECRET as string,
-  nodeEnv: process.env.NODE_ENV as string
+  nodeEnv: process.env.NODE_ENV as string,
+
+  // Encryption
+  encryptionKey: process.env.ENCRYPTION_KEY as string,
 } as const
