@@ -81,6 +81,13 @@ export const CONVERSATION_MESSAGES = {
   GET_CONVERSATION_SUCCESSFULLY: 'Get conversation successfully',
   GET_CONVERSATIONS_SUCCESSFULLY: 'Get conversations successfully',
   DELETE_CONVERSATION_SUCCESSFULLY: 'Delete conversation successfully',
+
+  // Messages
+  GET_MESSAGES_SUCCESSFULLY: 'Get messages successfully',
+  CREATE_MESSAGE_SUCCESSFULLY: 'Create message successfully',
+  DELETE_MESSAGE_SUCCESSFULLY: 'Delete message successfully',
+  MESSAGE_NOT_FOUND: 'Message not found',
+  MARK_MESSAGE_AS_READ_SUCCESSFULLY: 'Mark message as read successfully',
   // Participants
   USER_ALREADY_IN_CONVERSATION: 'User already in conversation',
   USER_NOT_IN_CONVERSATION: 'User not in conversation',
