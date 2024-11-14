@@ -6,6 +6,8 @@ import { ErrorWithStatus } from "~/utils/errors";
 import Conversation from "~/models/schemas/conversation.schema";
 import { ObjectId } from "mongodb";
 import Group from "~/models/schemas/group.schema";
+import { Message } from "~/models/schemas/message.schema";
+import { decrypt, encrypt } from "~/utils/encryption.utils";
 
 class ConversationsService {
     async createConversation(conversationData: {
@@ -205,6 +207,62 @@ class ConversationsService {
             await databaseServices.groups.deleteOne({ _id: conversation.group_id });
         }
         // await databaseServices.messages.deleteMany({ conversation_id: new ObjectId(conversationId) });
+    }
+
+    async createMessage(conversationId: string, sender_id: string, message_content: string, message_type: string) {
+        const conversation = await databaseServices.conversations.findOne({ _id: new ObjectId(conversationId) } as any);
+
+        if (!conversation) {
+            throw new ErrorWithStatus({
+                message: CONVERSATION_MESSAGES.CONVERSATION_NOT_FOUND,
+                status: HTTP_STATUS.NOT_FOUND
+            });
+        }
+
+        const encryptedContent = encrypt(message_content);
+
+        const newMessage = new Message({
+            conversation_id: new ObjectId(conversationId),
+            sender_id: new ObjectId(sender_id),
+            message_content: encryptedContent,
+            message_type,
+            is_read: false, // Thiết lập mặc định là chưa đọc
+            read_by: [],    // Danh sách người đã đọc
+            created_at: new Date(),
+            updated_at: new Date()
+        });
+
+        await databaseServices.messages.insertOne(newMessage);
+
+        return newMessage;
+    }
+
+    async getMessages(conversationId: string, lastMessageId?: string) {
+        const limit = 10; // Số lượng tin nhắn mỗi lần lấy
+        const conversation = await databaseServices.conversations.findOne({ _id: new ObjectId(conversationId) } as any);
+
+        if (!conversation) {
+            throw new ErrorWithStatus({
+                message: CONVERSATION_MESSAGES.CONVERSATION_NOT_FOUND,
+                status: HTTP_STATUS.NOT_FOUND
+            });
+        }
+
+        // Lấy tin nhắn của cuộc trò chuyện
+        const messages = await databaseServices.messages.find({
+            conversation_id: new ObjectId(conversationId),
+            ...(lastMessageId ? { _id: { $lt: new ObjectId(lastMessageId) } } : {})
+        } as any)
+            .sort({ _id: -1 }) // Sắp xếp theo _id giảm dần để lấy tin nhắn mới nhất trước
+            .limit(limit)
+            .toArray();
+
+        const decryptedMessages = messages.map((message: any) => ({
+            ...message,
+            message_content: message.message_content ? decrypt(message.message_content) : message.message_content
+        }));
+
+        return decryptedMessages;
     }
 }
 

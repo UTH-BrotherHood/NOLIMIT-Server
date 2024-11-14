@@ -1,6 +1,6 @@
 import { Router } from 'express'
-import { createOneToOneConversationController, createPrivateGroupController, deleteConversationController, getConversationByIdController, getConversationsController } from '~/controllers/conversation.controller';
-import { checkUserConversations, createOneToOneConversationValidation, createPrivateGroupValidation, verifyDeleteConversationPermission, verifyUserConversationAccess } from '~/middlewares/conversations.middleware';
+import { createMessageController, createOneToOneConversationController, createPrivateGroupController, deleteConversationController, getConversationByIdController, getConversationsController, getMessagesController } from '~/controllers/conversation.controller';
+import { checkUserConversations, createOneToOneConversationValidation, createPrivateGroupValidation, messageContentValidation, verifyDeleteConversationPermission, verifyUserConversationAccess } from '~/middlewares/conversations.middleware';
 import { accessTokenValidation } from '~/middlewares/users.middleware';
 import { wrapRequestHandler } from '~/utils/handlers';
 
@@ -57,6 +57,30 @@ Params: conversationId
 Middleware: accessTokenValidation, verifyDeleteConversationPermission
 */
 conversationsRouter.delete('/:conversationId', accessTokenValidation, wrapRequestHandler(verifyUserConversationAccess), wrapRequestHandler(verifyDeleteConversationPermission), wrapRequestHandler(deleteConversationController))
+
+/*
+Description: This route is used to get all messages of a conversation (with pagination): mỗi lần lấy 10 messages mới nhất
+Path: /conversation/:conversationId/messages
+Method: GET
+Params: conversationId
+Query: lastMessageId (tùy chọn): ID của tin nhắn cuối cùng mà người dùng đã đọc. Nếu không có lastMessageId, API sẽ trả về 10 tin nhắn mới nhất.
+Middleware: accessTokenValidation, verifyUserConversationAccess
+*/
+// mới thêm checkConversationExist vào middleware, chưa áp dụng với mấy route ở trên
+conversationsRouter.get('/:conversationId/messages', accessTokenValidation, wrapRequestHandler(verifyUserConversationAccess), wrapRequestHandler(getMessagesController))
+
+/*
+Description: This route is used to create a new message in a conversation
+Path: /conversation/:conversationId/messages
+Method: POST
+Params: conversationId
+Body: {
+    message_content: String,
+    message_type: String // text, image, file, code, inviteV2, system
+}
+Middleware: accessTokenValidation, verifyUserConversationAccess
+*/
+conversationsRouter.post('/:conversationId/messages', accessTokenValidation, wrapRequestHandler(verifyUserConversationAccess), messageContentValidation, wrapRequestHandler(createMessageController))
 
 export default conversationsRouter;
 

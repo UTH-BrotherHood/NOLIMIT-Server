@@ -1,5 +1,5 @@
 import { Request, Response } from 'express'
-import { NextFunction, ParamsDictionary } from 'express-serve-static-core'
+import { ParamsDictionary } from 'express-serve-static-core'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { CONVERSATION_MESSAGES } from '~/constants/messages'
 import { ConversationGroupReqBody, ConversationOneToOneReqBody } from '~/models/requests/conversations.requests'
@@ -58,5 +58,30 @@ export const deleteConversationController = async (req: Request, res: Response) 
         HTTP_STATUS.OK
     ).json({
         message: CONVERSATION_MESSAGES.DELETE_CONVERSATION_SUCCESSFULLY
+    })
+}
+
+export const getMessagesController = async (req: Request<ParamsDictionary, any, any, { lastMessageId?: string }>, res: Response) => {
+    const { conversationId } = req.params
+    const { lastMessageId } = req.query;
+    const result = await conversationsService.getMessages(conversationId, lastMessageId)
+    return res.status(
+        HTTP_STATUS.OK
+    ).json({
+        message: CONVERSATION_MESSAGES.GET_MESSAGES_SUCCESSFULLY,
+        data: result
+    })
+}
+
+export const createMessageController = async (req: Request<ParamsDictionary, any, any, { message_content: string, message_type: string }>, res: Response) => {
+    const { conversationId } = req.params
+    const { message_content, message_type = 'text' } = req.body
+    const { user_id } = req.decoded_authorization as TokenPayload
+    const result = await conversationsService.createMessage(conversationId, user_id, message_content, message_type)
+    return res.status(
+        HTTP_STATUS.CREATED
+    ).json({
+        message: CONVERSATION_MESSAGES.CREATE_MESSAGE_SUCCESSFULLY,
+        data: result
     })
 }

@@ -100,6 +100,26 @@ export const checkUserConversations = async (req: Request, res: Response, next: 
 
 };
 
+// Middleware checkConversationExist kiểm tra cuộc trò chuyện có tồn tại không.
+export const checkConversationExist = async (req: Request, res: Response, next: NextFunction) => {
+    const conversationId = req.params.conversationId;
+
+    // Kiểm tra nếu cuộc trò chuyện tồn tại
+    const conversation = await databaseServices.conversations.findOne({ _id: new ObjectId(conversationId) } as any);
+
+    if (!conversation) {
+        throw new ErrorWithStatus({
+            message: CONVERSATION_MESSAGES.CONVERSATION_NOT_FOUND,
+            status: HTTP_STATUS.NOT_FOUND
+        });
+    }
+
+    req.conversation = conversation;
+
+    next();
+
+};
+
 // Middleware authorizedConversationAccess kiểm tra xem người dùng có quyền truy cập vào cuộc trò chuyện không.
 export const verifyUserConversationAccess = async (req: Request, res: Response, next: NextFunction) => {
     const conversationId = req.params.conversationId;
@@ -196,3 +216,28 @@ export const verifyDeleteConversationPermission = async (req: Request, res: Resp
     req.conversation = conversation; // Lưu thông tin cuộc trò chuyện để dùng trong controller nếu cần
     next();
 };
+
+export const messageContentValidation = validate(
+    checkSchema({
+        message_content: {
+            isString: {
+                errorMessage: 'message_content must be a string',
+            },
+            notEmpty: {
+                errorMessage: 'message_content cannot be empty',
+            },
+        },
+        message_type: {
+            isString: {
+                errorMessage: 'message_type must be a string',
+            },
+            isIn: {
+                options: [['text', 'image', 'file', 'code', 'inviteV2', 'system']],
+                errorMessage: 'Invalid message type',
+            },
+            optional: true, // Cho phép không có `message_type`, mặc định là 'text' nếu không có
+        },
+    },
+        ['body']
+    )
+);
