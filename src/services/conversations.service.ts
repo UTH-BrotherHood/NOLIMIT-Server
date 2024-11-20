@@ -1,269 +1,358 @@
-import { ConversationOneToOneReqBody } from "~/models/requests/conversations.requests";
-import databaseServices from "./database.service";
-import { CONVERSATION_MESSAGES, USERS_MESSAGES } from "~/constants/messages";
-import HTTP_STATUS from "~/constants/httpStatus";
-import { ErrorWithStatus } from "~/utils/errors";
-import Conversation from "~/models/schemas/conversation.schema";
-import { ObjectId } from "mongodb";
-import Group from "~/models/schemas/group.schema";
-import { Message } from "~/models/schemas/message.schema";
-import { decrypt, encrypt } from "~/utils/encryption.utils";
+import { ConversationOneToOneReqBody } from '~/models/requests/conversations.requests'
+import databaseServices from './database.service'
+import { CONVERSATION_MESSAGES, USERS_MESSAGES } from '~/constants/messages'
+import HTTP_STATUS from '~/constants/httpStatus'
+import { ErrorWithStatus } from '~/utils/errors'
+import Conversation from '~/models/schemas/conversation.schema'
+import { ObjectId } from 'mongodb'
+import Group from '~/models/schemas/group.schema'
+import { Message } from '~/models/schemas/message.schema'
+import { decrypt, encrypt } from '~/utils/encryption.utils'
 
 class ConversationsService {
-    async createConversation(conversationData: {
-        conversation_name: any,
-        is_group: boolean,
-        creator: ObjectId,
-        group_id?: ObjectId
-    }) {
-        const newConversation = new Conversation(conversationData);
-        const result = await databaseServices.conversations.insertOne(newConversation);
-        return { _id: result.insertedId, ...conversationData };
+  async createConversation(conversationData: {
+    conversation_name: any
+    is_group: boolean
+    creator: ObjectId
+    group_id?: ObjectId
+  }) {
+    const newConversation = new Conversation(conversationData)
+    const result = await databaseServices.conversations.insertOne(newConversation)
+    return { _id: result.insertedId, ...conversationData }
+  }
+
+  async addParticipantsToConversation(
+    conversationId: ObjectId,
+    type: string,
+    participants: string[],
+    creatorId: string
+  ) {
+    const participantsData = participants.map((userId) => ({
+      reference_id: new ObjectId(conversationId),
+      type: type as 'conversation' | 'group',
+      user_id: new ObjectId(userId),
+      role: (type === 'group' && userId === creatorId ? 'admin' : 'member') as 'admin' | 'member',
+      status: 'active' as 'active' | 'left' | 'banned',
+      joined_at: new Date()
+    }))
+
+    await databaseServices.participants.insertMany(participantsData)
+  }
+
+  async getConversations(user_id: string) {
+    const user_id_object = new ObjectId(user_id)
+
+    // Lấy thông tin cuộc trò chuyện mà user_id tham gia
+    const conversations = await databaseServices.participants
+      .aggregate([
+        {
+          $match: {
+            user_id: user_id_object
+          }
+        },
+        {
+          $lookup: {
+            from: 'conversation', // Tên collection `conversations`
+            localField: 'reference_id',
+            foreignField: '_id',
+            as: 'conversationDetails'
+          }
+        },
+        {
+          $unwind: '$conversationDetails' // Chuyển mỗi cuộc trò chuyện thành một đối tượng riêng
+        },
+        {
+          $project: {
+            _id: '$conversationDetails._id',
+            conversation_name: '$conversationDetails.conversation_name',
+            is_group: '$conversationDetails.is_group',
+            creator: '$conversationDetails.creator',
+            created_at: '$conversationDetails.created_at',
+            updated_at: '$conversationDetails.updated_at',
+            role: '$role'
+          }
+        }
+      ])
+      .toArray()
+
+    return conversations
+  }
+
+  async createOneToOneConversation(user_id: string, payload: ConversationOneToOneReqBody) {
+    const { participants } = payload
+
+    const sortedParticipants = participants.sort()
+
+    // Tìm các participants tương ứng với cuộc trò chuyện 1-1 giữa hai user
+    const existingParticipantConversations = await databaseServices.participants
+      .aggregate([
+        {
+          $match: {
+            type: 'conversation',
+            user_id: { $in: sortedParticipants.map((id) => new ObjectId(id)) }
+          }
+        },
+        {
+          $group: {
+            _id: '$reference_id',
+            participantCount: { $sum: 1 }
+          }
+        },
+        {
+          $match: {
+            participantCount: 2
+          }
+        }
+      ])
+      .toArray()
+
+    // Nếu tìm thấy cuộc trò chuyện 1-1 đã tồn tại
+    if (existingParticipantConversations.length > 0) {
+      throw new ErrorWithStatus({
+        message: CONVERSATION_MESSAGES.CONVERSATION_ALREADY_EXIST,
+        status: HTTP_STATUS.CONFLICT
+      })
     }
 
-    async addParticipantsToConversation(conversationId: ObjectId, type: string, participants: string[], creatorId: string) {
-        const participantsData = participants.map(userId => ({
-            reference_id: new ObjectId(conversationId),
-            type: type as 'conversation' | 'group',
-            user_id: new ObjectId(userId),
-            role: (type === 'group' && userId === creatorId ? 'admin' : 'member') as 'admin' | 'member',
-            status: 'active' as 'active' | 'left' | 'banned',
-            joined_at: new Date(),
-        }));
+    // Lấy thông tin của người dùng
+    const [currentUser, otherUser] = await Promise.all([
+      databaseServices.users.findOne({ _id: new ObjectId(user_id) }),
+      databaseServices.users.findOne({ _id: new ObjectId(participants.find((id) => id !== user_id)) })
+    ])
 
-        await databaseServices.participants.insertMany(participantsData);
+    if (!currentUser || !otherUser) {
+      throw new ErrorWithStatus({
+        message: USERS_MESSAGES.USER_NOT_FOUND,
+        status: HTTP_STATUS.NOT_FOUND
+      })
     }
 
-    async getConversations(user_id: string) {
-        const user_id_object = new ObjectId(user_id);
-
-        // Lấy thông tin cuộc trò chuyện mà user_id tham gia
-        const conversations = await databaseServices.participants.aggregate([
-            {
-                $match: {
-                    user_id: user_id_object
-                }
-            },
-            {
-                $lookup: {
-                    from: 'conversation', // Tên collection `conversations`
-                    localField: 'reference_id',
-                    foreignField: '_id',
-                    as: 'conversationDetails'
-                }
-            },
-            {
-                $unwind: '$conversationDetails' // Chuyển mỗi cuộc trò chuyện thành một đối tượng riêng
-            },
-            {
-                $project: {
-                    _id: '$conversationDetails._id',
-                    conversation_name: '$conversationDetails.conversation_name',
-                    is_group: '$conversationDetails.is_group',
-                    creator: '$conversationDetails.creator',
-                    created_at: '$conversationDetails.created_at',
-                    updated_at: '$conversationDetails.updated_at',
-                    role: '$role'
-                }
-            }
-        ]).toArray();
-
-        return conversations;
+    // Tạo tên cuộc trò chuyện theo tên người dùng
+    const conversationName = {
+      [user_id]: otherUser.username,
+      [otherUser._id.toString()]: currentUser.username
     }
 
-    async createOneToOneConversation(user_id: string, payload: ConversationOneToOneReqBody) {
-        const { participants } = payload;
+    // Tạo cuộc trò chuyện 1-1
+    const newConversation = await conversationsService.createConversation({
+      conversation_name: conversationName,
+      is_group: false,
+      creator: new ObjectId(user_id)
+    })
 
-        const sortedParticipants = participants.sort();
+    // có thể gọi tới ParticipantsService.createParticipant
+    await conversationsService.addParticipantsToConversation(newConversation._id, 'conversation', participants, user_id)
 
-        // Tìm các participants tương ứng với cuộc trò chuyện 1-1 giữa hai user
-        const existingParticipantConversations = await databaseServices.participants
-            .aggregate([
-                {
-                    $match: {
-                        type: 'conversation',
-                        user_id: { $in: sortedParticipants.map(id => new ObjectId(id)) }
-                    }
-                },
-                {
-                    $group: {
-                        _id: "$reference_id",
-                        participantCount: { $sum: 1 }
-                    }
-                },
-                {
-                    $match: {
-                        participantCount: 2
-                    }
-                }
-            ])
-            .toArray();
+    return newConversation
+  }
 
-        // Nếu tìm thấy cuộc trò chuyện 1-1 đã tồn tại
-        if (existingParticipantConversations.length > 0) {
-            throw new ErrorWithStatus({
-                message: CONVERSATION_MESSAGES.CONVERSATION_ALREADY_EXIST,
-                status: HTTP_STATUS.CONFLICT
-            });
-        }
+  async createPrivateGroup(user_id: string, payload: any) {
+    const { participants, conversation_name, is_group } = payload
+    // const currentUserId = user_id;
 
-        // Lấy thông tin của người dùng
-        const [currentUser, otherUser] = await Promise.all([
-            databaseServices.users.findOne({ _id: new ObjectId(user_id) }),
-            databaseServices.users.findOne({ _id: new ObjectId(participants.find(id => id !== user_id)) })
-        ]);
+    // Kiểm tra các user_id có hợp lệ không
+    const users = await databaseServices.users
+      .find({
+        _id: { $in: participants.map((id: string) => new ObjectId(id)) }
+      })
+      .toArray()
 
-        if (!currentUser || !otherUser) {
-            throw new ErrorWithStatus({
-                message: USERS_MESSAGES.USER_NOT_FOUND,
-                status: HTTP_STATUS.NOT_FOUND
-            });
-        }
-
-        // Tạo tên cuộc trò chuyện theo tên người dùng
-        const conversationName = {
-            [user_id]: otherUser.username,
-            [otherUser._id.toString()]: currentUser.username,
-        };
-
-        // Tạo cuộc trò chuyện 1-1
-        const newConversation = await conversationsService.createConversation({
-            conversation_name: conversationName,
-            is_group: false,
-            creator: new ObjectId(user_id),
-        });
-
-        // có thể gọi tới ParticipantsService.createParticipant
-        await conversationsService.addParticipantsToConversation(newConversation._id, 'conversation', participants, user_id);
-
-        return newConversation;
+    // Nếu số lượng user_id không bằng số lượng participants thì trả về lỗi
+    if (users.length !== participants.length) {
+      throw new ErrorWithStatus({
+        message: USERS_MESSAGES.USER_NOT_FOUND,
+        status: HTTP_STATUS.NOT_FOUND
+      })
     }
 
-    async createPrivateGroup(user_id: string, payload: any) {
-        const { participants, conversation_name, is_group } = payload;
-        // const currentUserId = user_id;
-
-        // Kiểm tra các user_id có hợp lệ không
-        const users = await databaseServices.users.find({
-            _id: { $in: participants.map((id: string) => new ObjectId(id)) }
-        }).toArray();
-
-        // Nếu số lượng user_id không bằng số lượng participants thì trả về lỗi
-        if (users.length !== participants.length) {
-            throw new ErrorWithStatus({
-                message: USERS_MESSAGES.USER_NOT_FOUND,
-                status: HTTP_STATUS.NOT_FOUND
-            });
-        }
-
-        // Đảm bảo người tạo được thêm vào danh sách thành viên
-        if (!participants.includes(user_id)) {
-            participants.push(user_id);
-        }
-
-        // Tạo nhóm mới
-        const newGroup = new Group({
-            name: conversation_name,
-            creator: new ObjectId(user_id),
-            avatar_url: '', // Add appropriate default value
-            announcement: '', // Add appropriate default value
-            created_at: new Date(),
-            updated_at: new Date(),
-            // Add other required properties with default values
-        });
-        const result = await databaseServices.groups.insertOne(newGroup);
-
-        // Tạo cuộc trò chuyện nhóm và liên kết với nhóm
-        const newConversation = await conversationsService.createConversation({
-            conversation_name,
-            is_group: true,
-            creator: new ObjectId(user_id),
-            group_id: result.insertedId,
-        });
-
-        // Thêm các thành viên vào bảng participants
-        await conversationsService.addParticipantsToConversation(newConversation._id, 'group', participants, user_id);
-
-        return newConversation;
+    // Đảm bảo người tạo được thêm vào danh sách thành viên
+    if (!participants.includes(user_id)) {
+      participants.push(user_id)
     }
 
-    async getConversationById(conversationId: string) {
-        const conversation = await databaseServices.conversations.findOne({ _id: new ObjectId(conversationId) } as any);
+    // Tạo nhóm mới
+    const newGroup = new Group({
+      name: conversation_name,
+      creator: new ObjectId(user_id),
+      avatar_url: '', // Add appropriate default value
+      announcement: '', // Add appropriate default value
+      created_at: new Date(),
+      updated_at: new Date()
+      // Add other required properties with default values
+    })
+    const result = await databaseServices.groups.insertOne(newGroup)
 
-        if (!conversation) {
-            throw new ErrorWithStatus({
-                message: CONVERSATION_MESSAGES.CONVERSATION_NOT_FOUND,
-                status: HTTP_STATUS.NOT_FOUND
-            });
-        }
+    // Tạo cuộc trò chuyện nhóm và liên kết với nhóm
+    const newConversation = await conversationsService.createConversation({
+      conversation_name,
+      is_group: true,
+      creator: new ObjectId(user_id),
+      group_id: result.insertedId
+    })
 
-        return conversation;
+    // Thêm các thành viên vào bảng participants
+    await conversationsService.addParticipantsToConversation(newConversation._id, 'group', participants, user_id)
+
+    return newConversation
+  }
+
+  async getConversationById(conversationId: string) {
+    const conversation = await databaseServices.conversations.findOne({ _id: new ObjectId(conversationId) } as any)
+
+    if (!conversation) {
+      throw new ErrorWithStatus({
+        message: CONVERSATION_MESSAGES.CONVERSATION_NOT_FOUND,
+        status: HTTP_STATUS.NOT_FOUND
+      })
     }
 
-    async deleteConversation(conversation: any) {
-        await databaseServices.conversations.deleteOne({ _id: conversation._id });
-        await databaseServices.participants.deleteMany({ reference_id: conversation._id });
-        if (conversation.is_group && conversation.group_id) {
-            await databaseServices.groups.deleteOne({ _id: conversation.group_id });
-        }
-        // await databaseServices.messages.deleteMany({ conversation_id: new ObjectId(conversationId) });
+    return conversation
+  }
+
+  async deleteConversation(conversation: any) {
+    await databaseServices.conversations.deleteOne({ _id: conversation._id })
+    await databaseServices.participants.deleteMany({ reference_id: conversation._id })
+    if (conversation.is_group && conversation.group_id) {
+      await databaseServices.groups.deleteOne({ _id: conversation.group_id })
+    }
+    // await databaseServices.messages.deleteMany({ conversation_id: new ObjectId(conversationId) });
+  }
+
+  async createMessage(conversationId: string, sender_id: string, message_content: string, message_type: string) {
+    const conversation = await databaseServices.conversations.findOne({ _id: new ObjectId(conversationId) } as any)
+
+    if (!conversation) {
+      throw new ErrorWithStatus({
+        message: CONVERSATION_MESSAGES.CONVERSATION_NOT_FOUND,
+        status: HTTP_STATUS.NOT_FOUND
+      })
     }
 
-    async createMessage(conversationId: string, sender_id: string, message_content: string, message_type: string) {
-        const conversation = await databaseServices.conversations.findOne({ _id: new ObjectId(conversationId) } as any);
+    const encryptedContent = encrypt(message_content)
 
-        if (!conversation) {
-            throw new ErrorWithStatus({
-                message: CONVERSATION_MESSAGES.CONVERSATION_NOT_FOUND,
-                status: HTTP_STATUS.NOT_FOUND
-            });
-        }
+    const newMessage = new Message({
+      conversation_id: new ObjectId(conversationId),
+      sender_id: new ObjectId(sender_id),
+      message_content: encryptedContent,
+      message_type,
+      is_read: false, // Thiết lập mặc định là chưa đọc
+      read_by: [], // Danh sách người đã đọc
+      created_at: new Date(),
+      updated_at: new Date()
+    })
 
-        const encryptedContent = encrypt(message_content);
+    await databaseServices.messages.insertOne(newMessage)
 
-        const newMessage = new Message({
-            conversation_id: new ObjectId(conversationId),
-            sender_id: new ObjectId(sender_id),
-            message_content: encryptedContent,
-            message_type,
-            is_read: false, // Thiết lập mặc định là chưa đọc
-            read_by: [],    // Danh sách người đã đọc
-            created_at: new Date(),
-            updated_at: new Date()
-        });
+    return newMessage
+  }
 
-        await databaseServices.messages.insertOne(newMessage);
+  async getMessages(conversationId: string, lastMessageId?: string) {
+    const limit = 10 // Số lượng tin nhắn mỗi lần lấy
+    const conversation = await databaseServices.conversations.findOne({ _id: new ObjectId(conversationId) } as any)
 
-        return newMessage;
+    if (!conversation) {
+      throw new ErrorWithStatus({
+        message: CONVERSATION_MESSAGES.CONVERSATION_NOT_FOUND,
+        status: HTTP_STATUS.NOT_FOUND
+      })
     }
 
-    async getMessages(conversationId: string, lastMessageId?: string) {
-        const limit = 10; // Số lượng tin nhắn mỗi lần lấy
-        const conversation = await databaseServices.conversations.findOne({ _id: new ObjectId(conversationId) } as any);
-
-        if (!conversation) {
-            throw new ErrorWithStatus({
-                message: CONVERSATION_MESSAGES.CONVERSATION_NOT_FOUND,
-                status: HTTP_STATUS.NOT_FOUND
-            });
-        }
-
-        // Lấy tin nhắn của cuộc trò chuyện
-        const messages = await databaseServices.messages.find({
+    // Lấy tin nhắn của cuộc trò chuyện
+    const messages = await databaseServices.messages
+      .aggregate([
+        {
+          $match: {
             conversation_id: new ObjectId(conversationId),
             ...(lastMessageId ? { _id: { $lt: new ObjectId(lastMessageId) } } : {})
-        } as any)
-            .sort({ _id: -1 }) // Sắp xếp theo _id giảm dần để lấy tin nhắn mới nhất trước
-            .limit(limit)
-            .toArray();
+          }
+        },
+        { $sort: { _id: -1 } },
+        { $limit: limit },
+        {
+          $lookup: {
+            from: 'user',
+            let: { sender_id: '$sender_id' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $eq: ['$_id', '$$sender_id']
+                  }
+                }
+              },
+              {
+                $project: {
+                  username: 1,
+                  email: 1,
+                  avatar_url: 1
+                }
+              }
+            ],
+            as: 'sender'
+          }
+        },
+        {
+          $lookup: {
+            from: 'users',
+            let: { read_by_ids: '$read_by' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $in: [
+                      '$_id',
+                      {
+                        $map: {
+                          input: '$$read_by_ids',
+                          as: 'id',
+                          in: { $toObjectId: '$$id' }
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                $project: {
+                  _id: 1,
+                  username: 1,
+                  email: 1,
+                  avatar_url: 1
+                }
+              }
+            ],
+            as: 'read_by_users'
+          }
+        },
+        {
+          $unwind: {
+            path: '$sender',
+            preserveNullAndEmptyArrays: true
+          }
+        },
+        {
+          $project: {
+            _id: 1,
+            conversation_id: 1,
+            message_content: 1,
+            message_type: 1,
+            is_read: 1,
+            created_at: 1,
+            updated_at: 1,
+            sender: 1,
+            read_by_users: 1
+          }
+        }
+      ])
+      .toArray()
 
-        const decryptedMessages = messages.map((message: any) => ({
-            ...message,
-            message_content: message.message_content ? decrypt(message.message_content) : message.message_content
-        }));
+    const decryptedMessages = messages.map((message: any) => ({
+      ...message,
+      message_content: message.message_content ? decrypt(message.message_content) : message.message_content
+    }))
 
-        return decryptedMessages;
-    }
+    return decryptedMessages
+  }
 }
 
-export const conversationsService = new ConversationsService();
+export const conversationsService = new ConversationsService()
