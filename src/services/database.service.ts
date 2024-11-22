@@ -53,6 +53,10 @@ class DatabaseServices {
   get messages(): Collection<MessageDocument> { // Change any to MessageDocument 
     return this.db.collection(collection.MESSAGE)
   }
+
+  get attachments(): Collection<any> { // Change any to AttachmentDocument // để tạm any chứ sợ không kịp
+    return this.db.collection(collection.ATTACHMENT)
+  }
 }
 const databaseServices = new DatabaseServices()
 export default databaseServices
