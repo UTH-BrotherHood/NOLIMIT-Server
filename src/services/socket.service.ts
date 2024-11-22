@@ -17,12 +17,30 @@ class SocketService {
   public initialize(httpServer: HttpServer) {
     this.io = new Server(httpServer, {
       cors: {
-        origin: '*'
+        origin: 'http://localhost:3000',
+        methods: ['GET', 'POST'],
+        credentials: true
       }
     })
 
     this.io.on('connection', (socket) => {
       console.log('Client connected:', socket.id)
+
+      socket.on('user_connected', (userId: string) => {
+        console.log(`User ${userId} connected with socket ${socket.id}`)
+
+        if (!this.userSockets.has(userId)) {
+          this.userSockets.set(userId, [])
+        }
+
+        const userSocketIds = this.userSockets.get(userId)
+        if (userSocketIds && !userSocketIds.includes(socket.id)) {
+          userSocketIds.push(socket.id)
+          this.userSockets.set(userId, userSocketIds)
+        }
+
+        console.log(`Current sockets for user ${userId}:`, this.userSockets.get(userId))
+      })
 
       socket.on('join_conversation', (conversationId: string) => {
         socket.join(conversationId)
@@ -36,36 +54,46 @@ class SocketService {
 
       socket.on('disconnect', () => {
         console.log('Client disconnected:', socket.id)
+
+        this.userSockets.forEach((socketIds, userId) => {
+          const updatedSocketIds = socketIds.filter((id) => id !== socket.id)
+          if (updatedSocketIds.length === 0) {
+            this.userSockets.delete(userId)
+          } else {
+            this.userSockets.set(userId, updatedSocketIds)
+          }
+        })
       })
     })
   }
 
   public emitNewMessage(data: MessageData) {
+    console.log('Emitting new message to conversation:', data.conversation_id)
     this.io.to(data.conversation_id).emit('new_message', data)
   }
 
   public emitToUser(userId: string, event: string, data: any) {
-    if (!this.io) {
-      console.error('Socket.IO has not been initialized')
-      return
-    }
-
-    console.log('Current connected users:', Array.from(this.userSockets.keys()))
     console.log('Emitting to user:', userId)
-    console.log('User socket IDs:', this.userSockets.get(userId))
+    const userSocketIds = this.userSockets.get(userId)
+    console.log('User socket IDs:', userSocketIds)
 
-    const socketIds = this.userSockets.get(userId)
-    if (socketIds && socketIds.length > 0) {
-      socketIds.forEach((socketId) => {
-        this.io?.to(socketId).emit(event, data)
+    if (userSocketIds && userSocketIds.length > 0) {
+      userSocketIds.forEach((socketId) => {
+        console.log('Emitting to socket:', socketId)
+        this.io.to(socketId).emit(event, data)
       })
     } else {
-      console.log(`No active sockets found for user ${userId}`)
+      console.log('No active sockets found for user', userId)
     }
   }
 
   public emitToRoom(conversationId: string, event: string, data: any) {
+    console.log('Emitting to room:', conversationId)
     this.io.to(conversationId).emit(event, data)
+  }
+
+  public getUserSockets() {
+    return this.userSockets
   }
 }
 
