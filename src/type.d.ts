@@ -10,6 +10,8 @@ declare global {
       decoded_email_verify_token?: TokenPayload
       decoded_forgot_password_token?: TokenPayload
       conversation?: ConversationDocument;
+      fileUrl?: string;
+      file?: Express.Multer.File;
     }
   }
 }
