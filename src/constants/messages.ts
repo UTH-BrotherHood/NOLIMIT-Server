@@ -88,6 +88,7 @@ export const CONVERSATION_MESSAGES = {
   DELETE_MESSAGE_SUCCESSFULLY: 'Delete message successfully',
   MESSAGE_NOT_FOUND: 'Message not found',
   MARK_MESSAGE_AS_READ_SUCCESSFULLY: 'Mark message as read successfully',
+  GET_LAST_MESSAGE_SEEN_STATUS_SUCCESSFULLY: 'Get last message seen status successfully',
   // Participants
   USER_ALREADY_IN_CONVERSATION: 'User already in conversation',
   USER_NOT_IN_CONVERSATION: 'User not in conversation',

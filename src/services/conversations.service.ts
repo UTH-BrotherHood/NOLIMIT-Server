@@ -322,7 +322,7 @@ class ConversationsService {
         },
         {
           $lookup: {
-            from: 'users',
+            from: 'user',
             let: { read_by_ids: '$read_by' },
             pipeline: [
               {
@@ -381,6 +381,76 @@ class ConversationsService {
     }))
 
     return decryptedMessages
+  }
+
+  async getLastMessageSeenStatus(conversationId: string) {
+    const conversation = await databaseServices.conversations.findOne({ _id: new ObjectId(conversationId) } as any)
+
+    if (!conversation) {
+      throw new ErrorWithStatus({
+        message: CONVERSATION_MESSAGES.CONVERSATION_NOT_FOUND,
+        status: HTTP_STATUS.NOT_FOUND
+      })
+    }
+
+    const messages = await databaseServices.messages
+      .aggregate([
+        {
+          $match: {
+            conversation_id: new ObjectId(conversationId)
+          }
+        },
+        { $sort: { _id: -1 } },
+        { $limit: 1 },
+        {
+          $lookup: {
+            from: 'user',
+            let: { read_by_ids: '$read_by' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $in: [
+                      '$_id',
+                      {
+                        $map: {
+                          input: '$$read_by_ids',
+                          as: 'id',
+                          in: { $toObjectId: '$$id' }
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                $project: {
+                  _id: 1,
+                  username: 1,
+                  email: 1,
+                  avatar_url: 1
+                }
+              }
+            ],
+            as: 'read_by_users'
+          }
+        },
+        {
+          $project: {
+            _id: 1,
+            conversation_id: 1,
+            message_content: 1,
+            message_type: 1,
+            is_read: 1,
+            created_at: 1,
+            updated_at: 1,
+            read_by_users: 1
+          }
+        }
+      ])
+      .next()
+
+    return messages
   }
 }
 
