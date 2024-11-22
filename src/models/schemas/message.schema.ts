@@ -20,12 +20,12 @@ const MessageSchema = new Schema({
   },
   message_type: {
     type: String,
-    enum: ['text', 'image', 'file', 'code', 'inviteV2', 'system'],
+    enum: ['text', 'image', 'video', 'file', 'code', 'inviteV2', 'system'],
     default: 'text'
   },
   is_read: {
     type: Boolean,
-    default: false // Mặc định là chưa xem
+    default: false
   },
   read_by: [
     {
