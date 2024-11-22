@@ -8,6 +8,7 @@ import { ObjectId } from 'mongodb'
 import Group from '~/models/schemas/group.schema'
 import { Message } from '~/models/schemas/message.schema'
 import { decrypt, encrypt } from '~/utils/encryption.utils'
+import { socketService } from '~/services/socket.service'
 
 class ConversationsService {
   async createConversation(conversationData: {
@@ -235,13 +236,41 @@ class ConversationsService {
       sender_id: new ObjectId(sender_id),
       message_content: encryptedContent,
       message_type,
-      is_read: false, // Thiết lập mặc định là chưa đọc
-      read_by: [], // Danh sách người đã đọc
+      is_read: false,
+      read_by: [],
       created_at: new Date(),
       updated_at: new Date()
     })
 
     await databaseServices.messages.insertOne(newMessage)
+
+    // Lấy danh sách người tham gia cuộc trò chuyện
+    const participants = await databaseServices.participants
+      .find({ reference_id: new ObjectId(conversationId) })
+      .toArray()
+
+    // Thêm logs
+    console.log('Sending message to participants:', participants)
+
+    participants.forEach((participant) => {
+      const participantId = participant.user_id.toString()
+      const senderId = sender_id.toString()
+
+      if (participantId !== senderId) {
+        console.log('Emitting to user:', participantId)
+        socketService.emitToUser(
+          participantId,
+          'new_message',
+          {
+            conversation_id: conversationId,
+            message: {
+              ...newMessage,
+              message_content: decrypt(encryptedContent)
+            }
+          }
+        )
+      }
+    })
 
     return newMessage
   }
