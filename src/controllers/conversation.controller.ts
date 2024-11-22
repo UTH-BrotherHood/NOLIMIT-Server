@@ -83,3 +83,12 @@ export const createMessageController = async (
     data: result
   })
 }
+
+export const getLastMessageSeenStatusController = async (req: Request<ParamsDictionary>, res: Response) => {
+  const { conversationId } = req.params
+  const result = await conversationsService.getLastMessageSeenStatus(conversationId)
+  return res.status(HTTP_STATUS.OK).json({
+    message: CONVERSATION_MESSAGES.GET_LAST_MESSAGE_SEEN_STATUS_SUCCESSFULLY,
+    data: result
+  })
+}

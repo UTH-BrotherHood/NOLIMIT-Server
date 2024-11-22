@@ -30,6 +30,10 @@ class MessagesService {
             })
         }
 
+        if (message.sender_id.toString() === user_id) {
+            return;
+        }
+
         const result = await databaseServices.messages.updateOne(
             {
                 _id: new ObjectId(messageId) as any,
@@ -42,7 +46,7 @@ class MessagesService {
         )
 
         const senderId = message.sender_id.toString()
-        
+
         socketService.emitToUser(
             senderId,
             'message_read',

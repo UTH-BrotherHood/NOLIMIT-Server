@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { createMessageController, createOneToOneConversationController, createPrivateGroupController, deleteConversationController, getConversationByIdController, getConversationsController, getMessagesController } from '~/controllers/conversation.controller';
+import { createMessageController, createOneToOneConversationController, createPrivateGroupController, deleteConversationController, getConversationByIdController, getConversationsController, getLastMessageSeenStatusController, getMessagesController } from '~/controllers/conversation.controller';
 import { checkUserConversations, createOneToOneConversationValidation, createPrivateGroupValidation, messageContentValidation, verifyDeleteConversationPermission, verifyUserConversationAccess } from '~/middlewares/conversations.middleware';
 import { accessTokenValidation } from '~/middlewares/users.middleware';
 import { wrapRequestHandler } from '~/utils/handlers';
@@ -14,8 +14,6 @@ Path: /conversation/
 Method: GET
 */
 conversationsRouter.get('/', accessTokenValidation, wrapRequestHandler(checkUserConversations), wrapRequestHandler(getConversationsController))
-
-
 
 /*
 Description: This route is used to create a new 1 - 1 conversation
@@ -81,6 +79,15 @@ Body: {
 Middleware: accessTokenValidation, verifyUserConversationAccess
 */
 conversationsRouter.post('/:conversationId/messages', accessTokenValidation, wrapRequestHandler(verifyUserConversationAccess), messageContentValidation, wrapRequestHandler(createMessageController))
+
+/*
+Description: This route is used to display the "Seen" status for the last message in a conversation
+Path: /conversation/:conversationId/last-message-seen
+Method: GET
+Params: conversationId
+Middleware: accessTokenValidation, verifyUserConversationAccess
+*/
+conversationsRouter.get('/:conversationId/last-message-seen', accessTokenValidation, wrapRequestHandler(verifyUserConversationAccess), wrapRequestHandler(getLastMessageSeenStatusController))
 
 export default conversationsRouter;
 
