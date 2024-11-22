@@ -1,6 +1,7 @@
 import { Router } from 'express'
+import upload from '~/config/multer';
 import { createMessageController, createOneToOneConversationController, createPrivateGroupController, deleteConversationController, getConversationByIdController, getConversationsController, getLastMessageSeenStatusController, getMessagesController } from '~/controllers/conversation.controller';
-import { checkUserConversations, createOneToOneConversationValidation, createPrivateGroupValidation, messageContentValidation, verifyDeleteConversationPermission, verifyUserConversationAccess } from '~/middlewares/conversations.middleware';
+import { checkUserConversations, createOneToOneConversationValidation, createPrivateGroupValidation, messageContentValidation, uploadToCloudinaryMiddleware, verifyDeleteConversationPermission, verifyUserConversationAccess } from '~/middlewares/conversations.middleware';
 import { accessTokenValidation } from '~/middlewares/users.middleware';
 import { wrapRequestHandler } from '~/utils/handlers';
 
@@ -76,9 +77,9 @@ Body: {
     message_content: String,
     message_type: String // text, image, file, code, inviteV2, system
 }
-Middleware: accessTokenValidation, verifyUserConversationAccess
+Middleware: accessTokenValidation, verifyUserConversationAccess, messageContentValidation, uploadToCloudinaryMiddleware (nếu message_type là image hoặc file)
 */
-conversationsRouter.post('/:conversationId/messages', accessTokenValidation, wrapRequestHandler(verifyUserConversationAccess), messageContentValidation, wrapRequestHandler(createMessageController))
+conversationsRouter.post('/:conversationId/messages', accessTokenValidation, wrapRequestHandler(verifyUserConversationAccess), upload.single("file"), messageContentValidation, wrapRequestHandler(uploadToCloudinaryMiddleware), wrapRequestHandler(createMessageController))
 
 /*
 Description: This route is used to display the "Seen" status for the last message in a conversation

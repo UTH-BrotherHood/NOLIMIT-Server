@@ -9,6 +9,7 @@ import Group from '~/models/schemas/group.schema'
 import { Message } from '~/models/schemas/message.schema'
 import { decrypt, encrypt } from '~/utils/encryption.utils'
 import { socketService } from '~/services/socket.service'
+import { Attachment } from '~/models/schemas/attachment.schema'
 
 class ConversationsService {
   async createConversation(conversationData: {
@@ -229,7 +230,15 @@ class ConversationsService {
       })
     }
 
-    const encryptedContent = encrypt(message_content)
+    const encryptedContent = encrypt(message_content);
+
+    // Nếu là hình ảnh hoặc video, không cần mã hóa nội dung
+    // let encryptedContent = message_content;
+    // if (message_type === 'image' || message_type === 'video') {
+    //   encryptedContent = message_content;
+    // } else {
+    //   encryptedContent = encrypt(message_content);
+    // }
 
     const newMessage = new Message({
       conversation_id: new ObjectId(conversationId),

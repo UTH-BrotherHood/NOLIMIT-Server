@@ -4,7 +4,9 @@ import HTTP_STATUS from '~/constants/httpStatus'
 import { CONVERSATION_MESSAGES } from '~/constants/messages'
 import { ConversationGroupReqBody, ConversationOneToOneReqBody } from '~/models/requests/conversations.requests'
 import { TokenPayload } from '~/models/requests/users.requests'
+import { Attachment } from '~/models/schemas/attachment.schema'
 import { conversationsService } from '~/services/conversations.service'
+import databaseServices from '~/services/database.service'
 
 export const getConversationsController = async (req: Request, res: Response) => {
   const { user_id } = req.decoded_authorization as TokenPayload
@@ -77,7 +79,30 @@ export const createMessageController = async (
   const { conversationId } = req.params
   const { message_content, message_type = 'text' } = req.body
   const { user_id } = req.decoded_authorization as TokenPayload
-  const result = await conversationsService.createMessage(conversationId, user_id, message_content, message_type)
+
+  // const result = await conversationsService.createMessage(conversationId, user_id, message_content, message_type)
+
+  let result
+  if (message_type === 'image' || message_type === 'video' || message_type === 'file') {
+    if (!req.fileUrl) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'No file uploaded' });
+    }
+    // Nếu có file, lưu URL vào nội dung tin nhắn
+    result = await conversationsService.createMessage(conversationId, user_id, req.fileUrl, message_type);
+
+    const newAttachment = new Attachment({
+      attachment_type: message_type,
+      file_url: req.fileUrl,
+      message_id: result._id,
+    });
+
+    await databaseServices.attachments.insertOne(newAttachment)
+
+
+  } else {
+    result = await conversationsService.createMessage(conversationId, user_id, message_content, message_type);
+  }
+
   return res.status(HTTP_STATUS.CREATED).json({
     message: CONVERSATION_MESSAGES.CREATE_MESSAGE_SUCCESSFULLY,
     data: result
