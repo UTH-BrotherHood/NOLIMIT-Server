@@ -15,7 +15,8 @@ const collection = {
   // có thể mở rộng sau
   FRIENDREQUEST: 'friendrequest', // BAN BE
   BLOCKEDUSER: 'blockeduser', // DANH SACH BLOCK
-  CONVERSATION_SETTING: 'conversation_setting' // CÀI ĐẶT CUỘC TRÒ CHUYỆN
+  CONVERSATION_SETTING: 'conversation_setting', // CÀI ĐẶT CUỘC TRÒ CHUYỆN
+  STICKER: 'sticker', // STICKER
 }
 
 export default collection
