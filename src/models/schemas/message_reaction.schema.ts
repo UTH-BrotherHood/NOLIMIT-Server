@@ -4,6 +4,7 @@ import { MessageDocument } from '~/models/schemas/message.schema'
 import { ReactionDocument } from '~/models/schemas/reaction.schema'
 import { UserDocument } from '~/models/schemas/user.schema'
 
+// Nếu người dùng có thể thêm nhiều phản ứng khác nhau trên cùng một tin nhắn (khác loại hoặc nhiều lần).
 const MessageReactionSchema = new Schema({
   message_id: {
     type: Schema.Types.ObjectId,
