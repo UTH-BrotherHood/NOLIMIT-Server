@@ -5,15 +5,11 @@ import { MessageDocument } from './message.schema'
 const AttachmentSchema = new Schema({
   attachment_type: {
     type: String,
+    enum: ['image', 'video', 'audio', 'document'],
     required: true
   },
   file_url: {
     type: String,
-    required: true
-  },
-  message_id: {
-    type: Schema.Types.ObjectId,
-    ref: collection.MESSAGE,
     required: true
   },
   created_at: {
@@ -26,7 +22,6 @@ const AttachmentSchema = new Schema({
 export interface AttachmentDocument extends Document {
   attachment_type: string // Loại file đính kèm:  image, video, audio, document
   file_url: string
-  message_id: MessageDocument['_id']
   created_at: Date
 }
 
