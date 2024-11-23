@@ -2,6 +2,7 @@ import { Schema, model, Document } from 'mongoose'
 import collection from '~/constants/collection'
 import { ConversationDocument } from '~/models/schemas/conversation.schema'
 import { UserDocument } from '~/models/schemas/user.schema'
+import { IStickerDocument } from './sticker.schema'
 
 const MessageSchema = new Schema({
   conversation_id: {
@@ -16,13 +17,24 @@ const MessageSchema = new Schema({
   },
   message_content: {
     type: String,
-    required: true
+    required: function (this: any) {
+      return this.message_type === 'text';
+    }
   },
   message_type: {
     type: String,
-    enum: ['text', 'image', 'video', 'file', 'code', 'inviteV2', 'system'],
+    enum: ['text', 'sticker', 'image', 'video', 'file', 'voice', 'code', 'inviteV2', 'system'],
     default: 'text'
   },
+
+  sticker_id: {
+    type: Schema.Types.ObjectId,
+    ref: collection.STICKER,
+    required: function (this: any) {
+      return this.message_type === 'sticker';
+    }
+  },
+
   is_read: {
     type: Boolean,
     default: false
@@ -47,7 +59,8 @@ export interface MessageDocument extends Document {
   conversation_id: ConversationDocument['_id']
   sender_id: UserDocument['_id']
   message_content: string
-  message_type: string // Loại tin nhắn (text, image, file, code, inviteV2, system)
+  message_type: string // Loại tin nhắn (text, sticker, image, video, file, voice, code, inviteV2, system)
+  sticker_id?: IStickerDocument['_id'] // ID của sticker (nếu có)
   is_read: boolean // Trạng thái xem của tin nhắn
   read_by: UserDocument['_id'][] // Danh sách người đã xem tin nhắn
   created_at: Date
