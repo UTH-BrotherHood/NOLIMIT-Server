@@ -58,7 +58,7 @@ const MessageSchema = new Schema({
 export interface MessageDocument extends Document {
   conversation_id: ConversationDocument['_id']
   sender_id: UserDocument['_id']
-  message_content: string
+  message_content?: string
   message_type: string // Loại tin nhắn (text, sticker, image, video, file, voice, code, inviteV2, system)
   sticker_id?: IStickerDocument['_id'] // ID của sticker (nếu có)
   is_read: boolean // Trạng thái xem của tin nhắn
