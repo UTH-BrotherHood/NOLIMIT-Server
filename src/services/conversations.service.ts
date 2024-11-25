@@ -41,44 +41,131 @@ class ConversationsService {
     await databaseServices.participants.insertMany(participantsData)
   }
 
-  async getConversations(user_id: string) {
-    const user_id_object = new ObjectId(user_id)
+  async getConversations(user_id: string, page: number = 1, limit: number = 10) {
+    const user_id_object = new ObjectId(user_id);
 
-    // Lấy thông tin cuộc trò chuyện mà user_id tham gia
     const conversations = await databaseServices.participants
       .aggregate([
+        // 1. Lọc các participants mà user_id tham gia
         {
-          $match: {
-            user_id: user_id_object
-          }
+          $match: { user_id: user_id_object },
         },
+        // 2. Kết nối với bảng conversations
         {
           $lookup: {
-            from: 'conversation', // Tên collection `conversations`
-            localField: 'reference_id',
-            foreignField: '_id',
-            as: 'conversationDetails'
-          }
+            from: "conversation",
+            localField: "reference_id",
+            foreignField: "_id",
+            as: "conversationDetails",
+          },
         },
+        { $unwind: "$conversationDetails" }, // Chuyển mỗi cuộc trò chuyện thành một đối tượng riêng
+        // 3. Kết nối với bảng group nếu là nhóm
         {
-          $unwind: '$conversationDetails' // Chuyển mỗi cuộc trò chuyện thành một đối tượng riêng
+          $lookup: {
+            from: "group",
+            localField: "conversationDetails.group_id",
+            foreignField: "_id",
+            as: "groupDetails",
+          },
         },
+        // 4. Kết nối với bảng user nếu là cuộc trò chuyện cá nhân
+        {
+          $lookup: {
+            from: "user", // Tên bảng cần nối (bảng user)
+            let: {
+              is_group: "$conversationDetails.is_group", // Biến để kiểm tra xem cuộc trò chuyện có phải nhóm không
+              participants: {
+                $cond: {
+                  if: { $eq: [{ $type: "$conversationDetails.conversation_name" }, "object"] }, // Kiểm tra kiểu dữ liệu
+                  then: { $objectToArray: "$conversationDetails.conversation_name" }, // Nếu là object, chuyển thành mảng key-value
+                  else: [], // Nếu không phải object, trả về mảng rỗng
+                },
+              },
+            },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ["$$is_group", false] }, // Chỉ xử lý cuộc trò chuyện cá nhân
+                      { $ne: ["$_id", user_id_object] }, // Loại bỏ người dùng hiện tại
+                      {
+                        $in: [
+                          "$_id", // So khớp `_id` trong bảng user
+                          {
+                            $map: {
+                              input: "$$participants", // Duyệt qua mảng `participants`
+                              as: "participant", // Đặt tên biến đại diện cho mỗi phần tử
+                              in: { $toObjectId: "$$participant.k" }, // Chuyển key của `participant` thành ObjectId
+                            },
+                          },
+                        ],
+                      }, // Kiểm tra `_id` có nằm trong danh sách `participants`
+                    ],
+                  },
+                },
+              },
+              {
+                $project: {
+                  username: 1, // Lấy tên người dùng
+                  avatar_url: 1, // Lấy ảnh đại diện
+                  status: 1, // Lấy trạng thái (online/offline)
+                  tag: 1, // Lấy tag (biệt danh hoặc nhãn)
+                },
+              },
+            ],
+            as: "otherUserDetails", // Kết quả của $lookup sẽ lưu vào trường này
+          },
+        },
+        // 5. Định hình dữ liệu trả về
+        {
+          $addFields: {
+            participants: {
+              $cond: {
+                if: { $eq: ["$conversationDetails.is_group", true] },
+                then: {
+                  group: {
+                    name: { $arrayElemAt: ["$groupDetails.name", 0] },
+                    avatar_url: { $arrayElemAt: ["$groupDetails.avatar_url", 0] },
+                    announcement: { $arrayElemAt: ["$groupDetails.announcement", 0] },
+                  },
+                },
+                else: {
+                  user: {
+                    username: { $arrayElemAt: ["$otherUserDetails.username", 0] },
+                    avatar_url: { $arrayElemAt: ["$otherUserDetails.avatar_url", 0] },
+                    status: { $arrayElemAt: ["$otherUserDetails.status", 0] },
+                    tag: { $arrayElemAt: ["$otherUserDetails.tag", 0] },
+                  },
+                },
+              },
+            },
+          },
+        },
+        // 6. Sắp xếp theo thời gian cập nhật mới nhất
+        { $sort: { "conversationDetails.last_message_time": -1 } },
+        // 7. Phân trang
+        { $skip: (page - 1) * limit },
+        { $limit: limit },
+        // 8. Chỉ chọn các trường cần thiết
         {
           $project: {
-            _id: '$conversationDetails._id',
-            conversation_name: '$conversationDetails.conversation_name',
-            is_group: '$conversationDetails.is_group',
-            creator: '$conversationDetails.creator',
-            created_at: '$conversationDetails.created_at',
-            updated_at: '$conversationDetails.updated_at',
-            role: '$role'
-          }
-        }
+            _id: "$conversationDetails._id",
+            conversation_name: "$conversationDetails.conversation_name",
+            is_group: "$conversationDetails.is_group",
+            creator: "$conversationDetails.creator",
+            created_at: "$conversationDetails.created_at",
+            updated_at: "$conversationDetails.updated_at",
+            participants: 1,
+          },
+        },
       ])
-      .toArray()
+      .toArray();
 
-    return conversations
+    return conversations || [];
   }
+
 
   async createOneToOneConversation(user_id: string, payload: ConversationOneToOneReqBody) {
     const { participants } = payload
@@ -149,7 +236,7 @@ class ConversationsService {
   }
 
   async createPrivateGroup(user_id: string, payload: any) {
-    const { participants, conversation_name, is_group } = payload
+    const { participants, conversation_name, avatar_url, announcement } = payload
     // const currentUserId = user_id;
 
     // Kiểm tra các user_id có hợp lệ không
@@ -176,13 +263,15 @@ class ConversationsService {
     const newGroup = new Group({
       name: conversation_name,
       creator: new ObjectId(user_id),
-      avatar_url: '', // Add appropriate default value
-      announcement: '', // Add appropriate default value
+      avatar_url: avatar_url || '', // Add appropriate default value
+      announcement: announcement || '', // Add appropriate default value
       created_at: new Date(),
       updated_at: new Date()
       // Add other required properties with default values
     })
     const result = await databaseServices.groups.insertOne(newGroup)
+
+    const createdGroup = await databaseServices.groups.findOne({ _id: result.insertedId });
 
     // Tạo cuộc trò chuyện nhóm và liên kết với nhóm
     const newConversation = await conversationsService.createConversation({
@@ -195,11 +284,153 @@ class ConversationsService {
     // Thêm các thành viên vào bảng participants
     await conversationsService.addParticipantsToConversation(newConversation._id, 'group', participants, user_id)
 
-    return newConversation
+    return {
+      conversation: {
+        ...newConversation,
+        group_id: createdGroup?._id
+      },
+      group_summary: {
+        name: createdGroup?.name,
+        avatar_url: createdGroup?.avatar_url,
+        announcement: createdGroup?.announcement
+      }
+    };
   }
 
-  async getConversationById(conversationId: string) {
-    const conversation = await databaseServices.conversations.findOne({ _id: new ObjectId(conversationId) } as any)
+  async getConversationById(conversationId: string, userId: string) {
+    // const conversation = await databaseServices.conversations.findOne({ _id: new ObjectId(conversationId) } as any)
+    const conversationIdObject = new ObjectId(conversationId);
+    const userIdObject = new ObjectId(userId);
+
+    const conversation = await databaseServices.conversations.aggregate([
+      // 1. Tìm cuộc trò chuyện theo ID
+      {
+        $match: { _id: conversationIdObject },
+      },
+      // 2. Kết nối với bảng group nếu là nhóm
+      {
+        $lookup: {
+          from: "group",
+          localField: "group_id",
+          foreignField: "_id",
+          as: "groupDetails",
+        },
+      },
+      // 3. Kết nối với bảng participants để lấy danh sách người tham gia
+      {
+        $lookup: {
+          from: "participant",
+          localField: "_id",
+          foreignField: "reference_id",
+          as: "participants",
+        },
+      },
+      // 4. Kết nối với bảng user nếu là cá nhân
+      {
+        $lookup: {
+          from: "user",
+          let: {
+            is_group: "$is_group",
+            participants: {
+              $cond: {
+                if: { $eq: ["$is_group", false] },
+                then: {
+                  $filter: {
+                    input: "$participants",
+                    as: "participant",
+                    cond: {
+                      $ne: ["$$participant.user_id", userIdObject],
+                    },
+                  },
+                },
+                else: [],
+              },
+            },
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $in: ["$_id", { $map: { input: "$$participants", as: "p", in: "$$p.user_id" } }],
+                },
+              },
+            },
+            {
+              $project: {
+                username: 1,
+                avatar_url: 1,
+                status: 1,
+                tag: 1,
+              },
+            },
+          ],
+          as: "otherUserDetails",
+        },
+      },
+      // 5. Lấy tin nhắn gần đây nhất
+      {
+        $lookup: {
+          from: "messages",
+          let: { conversation_id: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $eq: ["$conversation_id", "$$conversation_id"],
+                },
+              },
+            },
+            { $sort: { created_at: -1 } }, // Sắp xếp theo thời gian tạo
+            { $limit: 1 }, // Chỉ lấy tin nhắn mới nhất
+          ],
+          as: "recentMessage",
+        },
+      },
+      // 6. Định hình dữ liệu trả về
+      {
+        $addFields: {
+          participants: {
+            $cond: {
+              if: { $eq: ["$is_group", true] },
+              then: {
+                group: {
+                  name: { $arrayElemAt: ["$groupDetails.name", 0] },
+                  avatar_url: { $arrayElemAt: ["$groupDetails.avatar_url", 0] },
+                  announcement: { $arrayElemAt: ["$groupDetails.announcement", 0] },
+                },
+                members: "$participants", // Danh sách người tham gia nhóm
+              },
+              else: {
+                user: {
+                  username: { $arrayElemAt: ["$otherUserDetails.username", 0] },
+                  avatar_url: { $arrayElemAt: ["$otherUserDetails.avatar_url", 0] },
+                  status: { $arrayElemAt: ["$otherUserDetails.status", 0] },
+                  tag: { $arrayElemAt: ["$otherUserDetails.tag", 0] },
+                },
+              },
+            },
+          },
+          recentMessage: { $arrayElemAt: ["$recentMessage", 0] },
+        },
+      },
+      // 7. Chỉ giữ các trường cần thiết
+      {
+        $project: {
+          _id: 1,
+          conversation_name: 1,
+          is_group: 1,
+          creator: 1,
+          created_at: 1,
+          updated_at: 1,
+          participants: 1,
+          recentMessage: {
+            message_content: 1,
+            sender_id: 1,
+            created_at: 1,
+          },
+        },
+      },
+    ]).toArray();
 
     if (!conversation) {
       throw new ErrorWithStatus({
@@ -208,7 +439,7 @@ class ConversationsService {
       })
     }
 
-    return conversation
+    return conversation[0] || null;
   }
 
   async deleteConversation(conversation: any) {
@@ -220,8 +451,20 @@ class ConversationsService {
     // await databaseServices.messages.deleteMany({ conversation_id: new ObjectId(conversationId) });
   }
 
-  async createMessage(conversationId: string, sender_id: string, message_content: string, message_type: string) {
-    const conversation = await databaseServices.conversations.findOne({ _id: new ObjectId(conversationId) } as any)
+  async createMessage({
+    conversation_id,
+    sender_id,
+    message_type,
+    message_content = null,
+    sticker_id = null
+  }: {
+    conversation_id: string
+    sender_id: string
+    message_type: string
+    message_content?: string | null
+    sticker_id?: string | null
+  }) {
+    const conversation = await databaseServices.conversations.findOne({ _id: new ObjectId(conversation_id) } as any)
 
     if (!conversation) {
       throw new ErrorWithStatus({
@@ -230,21 +473,14 @@ class ConversationsService {
       })
     }
 
-    const encryptedContent = encrypt(message_content);
-
-    // Nếu là hình ảnh hoặc video, không cần mã hóa nội dung
-    // let encryptedContent = message_content;
-    // if (message_type === 'image' || message_type === 'video') {
-    //   encryptedContent = message_content;
-    // } else {
-    //   encryptedContent = encrypt(message_content);
-    // }
+    const encryptedContent = message_content ? encrypt(message_content) : null
 
     const newMessage = new Message({
-      conversation_id: new ObjectId(conversationId),
+      conversation_id: new ObjectId(conversation_id),
       sender_id: new ObjectId(sender_id),
       message_content: encryptedContent,
       message_type,
+      sticker_id: sticker_id || undefined,
       is_read: false,
       read_by: [],
       created_at: new Date(),
@@ -253,12 +489,42 @@ class ConversationsService {
 
     await databaseServices.messages.insertOne(newMessage)
 
-    // Lấy danh sách người tham gia cuộc trò chuyện
+    await databaseServices.conversations.updateOne(
+      { _id: new ObjectId(conversation_id) } as any,
+      { $set: { last_message_time: new Date() } }
+    );
+
+    this.emitMessageToParticipants(conversation_id, sender_id, newMessage);
+
+    return newMessage
+  }
+
+  // lien ket tin nhan voi file dinh kem
+  async linkAttachmentToMessage({ attachmentId, messageId }: { attachmentId: string; messageId: string }) {
+    const attachmentObject = {
+      attachment_id: new ObjectId(attachmentId),
+      message_id: new ObjectId(messageId),
+    };
+
+    await databaseServices.messageAttachments.insertOne(attachmentObject);
+  }
+
+
+  async linkAttachmentsToMessage(messageId: string, attachmentIds: string[]) {
+    const attachmentObjects = attachmentIds.map((id) => ({
+      attachment_id: new ObjectId(id),
+      message_id: new ObjectId(messageId)
+    }))
+
+    await databaseServices.messageAttachments.insertMany(attachmentObjects)
+  }
+
+
+  async emitMessageToParticipants(conversation_id: string, sender_id: string, message: any) {
     const participants = await databaseServices.participants
-      .find({ reference_id: new ObjectId(conversationId) })
+      .find({ reference_id: new ObjectId(conversation_id) })
       .toArray()
 
-    // Thêm logs
     console.log('Sending message to participants:', participants)
 
     participants.forEach((participant) => {
@@ -267,21 +533,17 @@ class ConversationsService {
 
       if (participantId !== senderId) {
         console.log('Emitting to user:', participantId)
-        socketService.emitToUser(
-          participantId,
-          'new_message',
-          {
-            conversation_id: conversationId,
-            message: {
-              ...newMessage,
-              message_content: decrypt(encryptedContent)
-            }
-          }
-        )
+        socketService.emitToUser(participantId, 'new_message', {
+          conversation_id: conversation_id,
+          message: {
+            ...message,
+            // message_content: message.message_content ? decrypt(message.message_content) : null,
+            file_url: message.message_type === "voice" ? message.file_url : undefined, // Đính kèm URL file voice nếu có
+            message_content: message.message_type === "text" ? decrypt(message.message_content) : null,
+          },
+        })
       }
     })
-
-    return newMessage
   }
 
   async getMessages(conversationId: string, lastMessageId?: string) {
