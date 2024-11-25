@@ -7,8 +7,7 @@ import databaseServices from "~/services/database.service";
 import HTTP_STATUS from "~/constants/httpStatus";
 import { CONVERSATION_MESSAGES } from "~/constants/messages";
 import { ErrorWithStatus } from "~/utils/errors";
-import cloudinary from "~/config/cloudinary";
-import upload from "~/config/multer";
+
 
 export const createOneToOneConversationValidation = validate(
     checkSchema({
@@ -16,6 +15,7 @@ export const createOneToOneConversationValidation = validate(
             isBoolean: {
                 errorMessage: 'is_group must be a boolean',
             },
+            toBoolean: true,
             custom: {
                 options: (value) => value === false,
                 errorMessage: 'is_group must be false for 1-1 conversations',
@@ -49,6 +49,7 @@ export const createPrivateGroupValidation = validate(
             isBoolean: {
                 errorMessage: 'is_group must be a boolean',
             },
+            toBoolean: true,
             custom: {
                 options: (value) => value === true,
                 errorMessage: 'is_group must be true for group conversations',
@@ -79,6 +80,26 @@ export const createPrivateGroupValidation = validate(
                 errorMessage: 'conversation_name cannot be empty',
             },
         },
+
+        announcement: {
+            optional: true,
+            isString: {
+                errorMessage: 'announcement must be a string',
+            },
+        },
+
+        avatar: {
+            custom: {
+                options: (value, { req }) => {
+                    const { file_type } = req.body;
+                    if (['image'].includes(file_type) && !req.file) {
+                        throw new Error(`File is required for ${file_type} messages`);
+                    }
+
+                    return true;
+                },
+            },
+        }
     },
         ['body']
     )
@@ -221,57 +242,70 @@ export const verifyDeleteConversationPermission = async (req: Request, res: Resp
 
 export const messageContentValidation = validate(
     checkSchema({
-        message_content: {
-            isString: {
-                errorMessage: 'message_content must be a string',
-            },
-            notEmpty: {
-                errorMessage: 'message_content cannot be empty',
-            },
-            custom: {
-                options: (value, { req }) => {
-                    const { message_type } = req.body;
-
-                    // Kiểm tra `message_content` chỉ khi message_type là 'text'
-                    if (message_type !== 'image' && message_type !== 'video' && message_type !== 'file') {
-                        if (!value || typeof value !== 'string') {
-                            throw new Error('message_content must be a non-empty string when message_type is not image, video, or file');
-                        }
-                    }
-                    return true;
-                }
-            }
-        },
         message_type: {
+            optional: true,
             isString: {
                 errorMessage: 'message_type must be a string',
             },
             isIn: {
-                options: [['text', 'image', 'video', 'file', 'code', 'inviteV2', 'system']],
+                options: [['text', 'sticker', 'image', 'video', 'voice', 'file', 'code', 'inviteV2', 'system']],
                 errorMessage: 'Invalid message type',
             },
-            // Kiểm tra nếu `message_type` là chuỗi hợp lệ
+            trim: true,
+            notEmpty: {
+                errorMessage: 'message_type is required',
+            },
             custom: {
                 options: (value) => {
                     const trimmedValue = value.trim();
-                    if (!['text', 'image', 'video', 'file', 'code', 'inviteV2', 'system'].includes(trimmedValue)) {
+                    if (!['text', 'image', 'sticker', 'video', 'file', 'voice', 'code', 'inviteV2', 'system'].includes(trimmedValue)) {
                         throw new Error('Invalid message type');
                     }
                     return true;
                 },
             },
-            optional: true,
         },
+
+        message_content: {
+            optional: true,
+            isString: {
+                errorMessage: 'message_content must be a string',
+            },
+            custom: {
+                options: (value, { req }) => {
+                    const { message_type } = req.body;
+                    if (message_type === 'text' && (!value || value.trim() === '')) {
+                        throw new Error('message_content must be a non-empty string when message_type is not image, video, or file');
+                    }
+                    return true;
+                }
+            }
+        },
+
+        sticker_id: {
+            optional: true,
+            isMongoId: {
+                errorMessage: 'sticker_id must be a valid Mongo ID',
+            },
+            custom: {
+                options: (value, { req }) => {
+                    if (req.body.message_type === 'sticker' && !value) {
+                        throw new Error('sticker_id is required for sticker messages');
+                    }
+                    return true;
+                },
+            },
+        },
+
         file: {
             custom: {
                 options: (value, { req }) => {
                     const { message_type } = req.body;
                     // Kiểm tra loại tin nhắn là hình ảnh, video hoặc file và có tệp đính kèm không
-                    if (message_type === 'image' || message_type === 'video' || message_type === 'file') {
-                        if (!req.file) {
-                            throw new Error('File is required for image, video, or file message type');
-                        }
+                    if (['image', 'video', 'file', 'voice'].includes(message_type) && !req.file) {
+                        throw new Error(`File is required for ${message_type} messages`);
                     }
+
                     return true;
                 },
             },
@@ -280,46 +314,4 @@ export const messageContentValidation = validate(
         ['body'])
 );
 
-export const uploadToCloudinaryMiddleware = (req: Request, res: Response, next: NextFunction) => {
-    if (req.file) {
-        try {
-            // const fileType = req.body.message_type === 'image' ? 'image' : 'video';
-            const fileType = 'image';
 
-            // Upload lên Cloudinary
-            const uploadStream = cloudinary.uploader.upload_stream(
-                {
-                    resource_type: fileType,
-                    public_id: `${req.params.conversationId}_${Date.now()}`,
-                    folder: 'nolimit/conversation_media',
-                },
-                (error, result) => {
-                    if (error) {
-                        console.error('Cloudinary upload error details:', error);
-                        throw new ErrorWithStatus({
-                            message: 'Error uploading file to Cloudinary',
-                            status: HTTP_STATUS.INTERNAL_SERVER_ERROR
-                        });
-                    }
-
-                    req.fileUrl = result?.secure_url;
-                    next();
-                }
-            );
-
-            const stream = require('stream');
-            const bufferStream = new stream.PassThrough();
-            bufferStream.end(req.file.buffer);
-
-            console.log('Starting upload to Cloudinary...');
-            bufferStream.pipe(uploadStream);
-
-        } catch (error) {
-            return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: 'Internal Server Error' });
-        }
-    } else {
-        next();
-    }
-};
-//     });
-// }
