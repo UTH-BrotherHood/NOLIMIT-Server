@@ -499,6 +499,98 @@ class UsersService {
       .toArray()
     return { ...result[0] }
   }
+
+  async searchUserByEmail(query: string) {
+    const result = await databaseServices.users
+      .aggregate([
+        {
+          $search: {
+            index: 'email_index',
+            compound: {
+              must: [
+                {
+                  text: {
+                    query: query,
+                    path: "email",
+                    fuzzy: {
+                      maxEdits: 1, // Cho phép sai tối đa 2 ký tự
+                      prefixLength: 2 // Cho phép sai từ ký tự đầu tiên
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          $limit: 10 // Giới hạn số lượng kết quả trả về
+        },
+        {
+          $project: {
+            password: 0,
+            forgot_password: 0
+          }
+        }
+      ])
+      .toArray();
+
+    if (result.length === 0) {
+      throw new ErrorWithStatus({
+        message: USERS_MESSAGES.USER_NOT_FOUND,
+        status: HTTP_STATUS.NOT_FOUND
+      });
+    }
+
+    return result.map(user => ({
+      _id: user._id,
+      username: user.username,
+      email: user.email,
+      avatar_url: user.avatar_url,
+      status: user.status,
+      verify: user.verify
+    }));
+  }
+
+  //   const UserOnlineStatusCacheExpireTime = 1000 * 60;
+  // function getUserOnlineStatusWrapper() {
+  //   const cache: Record<
+  //     string,
+  //     {
+  //       value: boolean;
+  //       expireTime: number;
+  //     }
+  //   > = {};
+  //   return async function getUserOnlineStatus(
+  //     ctx: Context<{ userId: string }>,
+  //   ) {
+  //     const { userId } = ctx.data;
+  //     assert(userId, 'userId不能为空');
+  //     assert(isValid(userId), '不合法的userId');
+
+  //     if (cache[userId] && cache[userId].expireTime > Date.now()) {
+  //       return {
+  //         isOnline: cache[userId].value,
+  //       };
+  //     }
+
+  //     const sockets = await Socket.find({ user: userId });
+  //     const isOnline = sockets.length > 0;
+  //     cache[userId] = {
+  //       value: isOnline,
+  //       expireTime: Date.now() + UserOnlineStatusCacheExpireTime,
+  //     };
+  //     return {
+  //       isOnline,
+  //     };
+  //   };
+  // }
+
+  // async addFriend(user_id: string, friend_id: string) { }
+
+  // async removeFriend(user_id: string, friend_id: string) { }
+
+  // async setUserTag(user_id: string, tag: string) { }
+
 }
 
 const usersService = new UsersService()

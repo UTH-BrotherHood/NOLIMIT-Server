@@ -22,6 +22,10 @@ const ConversationSchema = new Schema({
     ref: collection.USER,
     required: true,
   },
+  last_message_time: { // Thời gian tin nhắn mới nhất để sắp xếp danh sách tin nhắn phía fe, 
+    type: Date,
+    default: Date.now,
+  },
   created_at: {
     type: Date,
     default: Date.now
@@ -37,6 +41,7 @@ export interface ConversationDocument extends Document {
   is_group: boolean
   group_id?: GroupDocument['_id']
   creator: UserDocument['_id']
+  last_message_time: Date
   created_at: Date
   updated_at: Date
 }

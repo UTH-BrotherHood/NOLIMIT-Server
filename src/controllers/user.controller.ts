@@ -20,6 +20,7 @@ import HTTP_STATUS from '~/constants/httpStatus'
 import { tokenType, userVerificationStatus } from '~/constants/enums'
 import { UserDocument } from '~/models/schemas/user.schema'
 import { envConfig } from '~/constants/config'
+import { ErrorWithStatus } from '~/utils/errors'
 // import queryString from 'query-string';
 
 interface CustomRequest extends Request {
@@ -198,5 +199,30 @@ export const meController = async (req: Request, res: Response, next: NextFuncti
   return res.json({
     message: USERS_MESSAGES.GET_ME_SUCCESSFULLY,
     data: user
+  })
+}
+
+export const searchUserController = async (req: Request, res: Response, next: NextFunction) => {
+  const { email } = req.query
+
+  if (!email || typeof email !== 'string' || email.trim().length < 3) {
+    throw new ErrorWithStatus({
+      message: 'Please enter a valid email.',
+      status: HTTP_STATUS.BAD_REQUEST
+    });
+  }
+
+  if (email === "@gmail.com") {
+    throw new ErrorWithStatus({
+      message: "Please enter the first part of the email.",
+      status: HTTP_STATUS.BAD_REQUEST
+    });
+  }
+
+
+  const users = await usersService.searchUserByEmail(email.trim())
+  return res.json({
+    message: USERS_MESSAGES.SEARCH_USER_SUCCESSFULLY,
+    data: users
   })
 }

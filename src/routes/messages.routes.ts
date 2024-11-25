@@ -33,6 +33,7 @@ Method: PUT
 Params: messageId
 Middleware: accessTokenValidation,verifyUserConversationAccess(phải có quyền truy cập vào cuộc trò chuyện)
 */
+// khi người dùng mở cuộc trò chuyện, thì tất cả các tin nhắn trong cuộc trò chuyện đó sẽ được đánh dấu là đã đọc
 messagesRouter.put('/:messageId/read', accessTokenValidation, wrapRequestHandler(verifyUserConversationAccess), wrapRequestHandler(markMessageAsReadController))
 
 

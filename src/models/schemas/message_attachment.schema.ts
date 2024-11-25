@@ -3,6 +3,7 @@ import collection from '~/constants/collection'
 import { MessageDocument } from '~/models/schemas/message.schema'
 import { AttachmentDocument } from '~/models/schemas/attachment.schema'
 
+// bảng này lưu thông tin về các file đính kèm trong 1 tin nhắn (sử dụng trong trường hợp tin nhắn có nhiều file đính kèm)
 const MessageAttachmentSchema = new Schema({
   message_id: {
     type: Schema.Types.ObjectId,

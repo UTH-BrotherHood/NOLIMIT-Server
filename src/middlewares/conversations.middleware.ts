@@ -8,12 +8,14 @@ import HTTP_STATUS from "~/constants/httpStatus";
 import { CONVERSATION_MESSAGES } from "~/constants/messages";
 import { ErrorWithStatus } from "~/utils/errors";
 
+
 export const createOneToOneConversationValidation = validate(
     checkSchema({
         is_group: {
             isBoolean: {
                 errorMessage: 'is_group must be a boolean',
             },
+            toBoolean: true,
             custom: {
                 options: (value) => value === false,
                 errorMessage: 'is_group must be false for 1-1 conversations',
@@ -47,6 +49,7 @@ export const createPrivateGroupValidation = validate(
             isBoolean: {
                 errorMessage: 'is_group must be a boolean',
             },
+            toBoolean: true,
             custom: {
                 options: (value) => value === true,
                 errorMessage: 'is_group must be true for group conversations',
@@ -77,6 +80,26 @@ export const createPrivateGroupValidation = validate(
                 errorMessage: 'conversation_name cannot be empty',
             },
         },
+
+        announcement: {
+            optional: true,
+            isString: {
+                errorMessage: 'announcement must be a string',
+            },
+        },
+
+        avatar: {
+            custom: {
+                options: (value, { req }) => {
+                    const { file_type } = req.body;
+                    if (['image'].includes(file_type) && !req.file) {
+                        throw new Error(`File is required for ${file_type} messages`);
+                    }
+
+                    return true;
+                },
+            },
+        }
     },
         ['body']
     )
@@ -219,25 +242,76 @@ export const verifyDeleteConversationPermission = async (req: Request, res: Resp
 
 export const messageContentValidation = validate(
     checkSchema({
-        message_content: {
-            isString: {
-                errorMessage: 'message_content must be a string',
-            },
-            notEmpty: {
-                errorMessage: 'message_content cannot be empty',
-            },
-        },
         message_type: {
+            optional: true,
             isString: {
                 errorMessage: 'message_type must be a string',
             },
             isIn: {
-                options: [['text', 'image', 'file', 'code', 'inviteV2', 'system']],
+                options: [['text', 'sticker', 'image', 'video', 'voice', 'file', 'code', 'inviteV2', 'system']],
                 errorMessage: 'Invalid message type',
             },
-            optional: true, // Cho phép không có `message_type`, mặc định là 'text' nếu không có
+            trim: true,
+            notEmpty: {
+                errorMessage: 'message_type is required',
+            },
+            custom: {
+                options: (value) => {
+                    const trimmedValue = value.trim();
+                    if (!['text', 'image', 'sticker', 'video', 'file', 'voice', 'code', 'inviteV2', 'system'].includes(trimmedValue)) {
+                        throw new Error('Invalid message type');
+                    }
+                    return true;
+                },
+            },
         },
+
+        message_content: {
+            optional: true,
+            isString: {
+                errorMessage: 'message_content must be a string',
+            },
+            custom: {
+                options: (value, { req }) => {
+                    const { message_type } = req.body;
+                    if (message_type === 'text' && (!value || value.trim() === '')) {
+                        throw new Error('message_content must be a non-empty string when message_type is not image, video, or file');
+                    }
+                    return true;
+                }
+            }
+        },
+
+        sticker_id: {
+            optional: true,
+            isMongoId: {
+                errorMessage: 'sticker_id must be a valid Mongo ID',
+            },
+            custom: {
+                options: (value, { req }) => {
+                    if (req.body.message_type === 'sticker' && !value) {
+                        throw new Error('sticker_id is required for sticker messages');
+                    }
+                    return true;
+                },
+            },
+        },
+
+        file: {
+            custom: {
+                options: (value, { req }) => {
+                    const { message_type } = req.body;
+                    // Kiểm tra loại tin nhắn là hình ảnh, video hoặc file và có tệp đính kèm không
+                    if (['image', 'video', 'file', 'voice'].includes(message_type) && !req.file) {
+                        throw new Error(`File is required for ${message_type} messages`);
+                    }
+
+                    return true;
+                },
+            },
+        }
     },
-        ['body']
-    )
+        ['body'])
 );
+
+

@@ -39,4 +39,9 @@ export const envConfig = {
 
   // Encryption
   encryptionKey: process.env.ENCRYPTION_KEY as string,
+
+  // Cloudinary
+  cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME as string,
+  cloudinaryApiKey: process.env.CLOUDINARY_API_KEY as string,
+  cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET as string,
 } as const

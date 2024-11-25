@@ -10,6 +10,7 @@ import {
   registerController,
   resendVerifyEmailController,
   resetPasswordController,
+  searchUserController,
   updateMeController,
   verifyEmailController,
   verifyForgotPasswordController
@@ -161,5 +162,7 @@ Headers: { Authorization : Bearer <accessToken> }
 Method: GET
 */
 usersRouters.get('/me', accessTokenValidation, wrapRequestHandler(meController))
+
+usersRouters.get('/search', accessTokenValidation, verifiedUserValidation, wrapRequestHandler(searchUserController))
 
 export default usersRouters

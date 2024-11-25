@@ -4,6 +4,7 @@ import collection from '~/constants/collection'
 const AttachmentSchema = new Schema({
   attachment_type: {
     type: String,
+    enum: ['image', 'video', 'audio', 'document'],
     required: true
   },
   file_url: {

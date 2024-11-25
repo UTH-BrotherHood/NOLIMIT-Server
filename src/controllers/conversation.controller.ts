@@ -4,7 +4,10 @@ import HTTP_STATUS from '~/constants/httpStatus'
 import { CONVERSATION_MESSAGES } from '~/constants/messages'
 import { ConversationGroupReqBody, ConversationOneToOneReqBody } from '~/models/requests/conversations.requests'
 import { TokenPayload } from '~/models/requests/users.requests'
+import { attachmentService } from '~/services/attachment.service'
 import { conversationsService } from '~/services/conversations.service'
+import { Attachment } from '~/models/schemas/attachment.schema'
+import databaseServices from '~/services/database.service'
 
 export const getConversationsController = async (req: Request, res: Response) => {
   const { user_id } = req.decoded_authorization as TokenPayload
@@ -34,7 +37,11 @@ export const createPrivateGroupController = async (
 ) => {
   const { user_id } = req.decoded_authorization as TokenPayload
   const { body } = req
-  const result = await conversationsService.createPrivateGroup(user_id, body)
+  const avatar_url = req.fileUrl || ""
+  const result = await conversationsService.createPrivateGroup(user_id, {
+    ...body,
+    avatar_url,
+  });
   return res.status(HTTP_STATUS.CREATED).json({
     message: CONVERSATION_MESSAGES.CREATE_CONVERSATION_SUCCESSFULLY,
     data: result
@@ -43,7 +50,8 @@ export const createPrivateGroupController = async (
 
 export const getConversationByIdController = async (req: Request<ParamsDictionary>, res: Response) => {
   const { conversationId } = req.params
-  const result = await conversationsService.getConversationById(conversationId)
+  const { user_id } = req.decoded_authorization as TokenPayload
+  const result = await conversationsService.getConversationById(conversationId, user_id)
   return res.status(HTTP_STATUS.OK).json({
     message: CONVERSATION_MESSAGES.GET_CONVERSATION_SUCCESSFULLY,
     data: result
@@ -71,13 +79,60 @@ export const getMessagesController = async (
 }
 
 export const createMessageController = async (
-  req: Request<ParamsDictionary, any, any, { message_content: string; message_type: string }>,
+  req: Request<ParamsDictionary>,
   res: Response
 ) => {
   const { conversationId } = req.params
-  const { message_content, message_type = 'text' } = req.body
+  const { message_content, message_type = 'text', sticker_id } = req.body
   const { user_id } = req.decoded_authorization as TokenPayload
-  const result = await conversationsService.createMessage(conversationId, user_id, message_content, message_type)
+
+  let result
+  if (message_type === "text") {
+    result = await conversationsService.createMessage({
+      conversation_id: conversationId,
+      sender_id: user_id,
+      message_type,
+      message_content,
+    });
+  } else if (message_type === "sticker") {
+    result = await conversationsService.createMessage({
+      conversation_id: conversationId,
+      sender_id: user_id,
+      message_type,
+      sticker_id,
+    });
+  }
+
+
+  if (["image", "video", "file", "voice"].includes(message_type)) {
+    if (!req.fileUrl) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: "No file uploaded" });
+    }
+
+    // Tạo file đính kèm
+    const attachment = await attachmentService.createAttachment({
+      attachment_type: message_type === "voice" ? "audio" : message_type, // Nếu là voice, gắn loại "audio"
+      file_url: req.fileUrl
+    });
+
+    if (!attachment || !attachment._id) {
+      throw new Error("Attachment creation failed");
+    }
+
+    // Tạo tin nhắn
+    result = await conversationsService.createMessage({ conversation_id: conversationId, sender_id: user_id, message_type });
+
+    if (!result || !result._id) {
+      throw new Error("Message creation failed");
+    }
+
+    // Liên kết Attachment với Message
+    await conversationsService.linkAttachmentToMessage({
+      attachmentId: attachment._id.toString(),
+      messageId: result._id.toString(),
+    });
+  }
+
   return res.status(HTTP_STATUS.CREATED).json({
     message: CONVERSATION_MESSAGES.CREATE_MESSAGE_SUCCESSFULLY,
     data: result
