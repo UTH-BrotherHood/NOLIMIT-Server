@@ -50,12 +50,16 @@ class DatabaseServices {
     return this.db.collection(collection.PARTICIPANT)
   }
 
-  get messages(): Collection<MessageDocument> { // Change any to MessageDocument 
+  get messages(): Collection<MessageDocument> {
     return this.db.collection(collection.MESSAGE)
   }
 
   get attachments(): Collection<any> { // Change any to AttachmentDocument // để tạm any chứ sợ không kịp
     return this.db.collection(collection.ATTACHMENT)
+  }
+
+  get messageAttachments(): Collection<any> {
+    return this.db.collection(collection.MESSAGE_ATTACHMENT)
   }
 }
 const databaseServices = new DatabaseServices()

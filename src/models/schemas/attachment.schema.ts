@@ -1,6 +1,5 @@
 import { Schema, model, Document } from 'mongoose'
 import collection from '~/constants/collection'
-import { MessageDocument } from './message.schema'
 
 const AttachmentSchema = new Schema({
   attachment_type: {
