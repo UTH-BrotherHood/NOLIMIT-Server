@@ -58,6 +58,9 @@ export const USERS_MESSAGES = {
   CHANGE_PASSWORD_SUCCESSFULLY: 'Change password successfully',
   // get me
   GET_ME_SUCCESSFULLY: 'Get me successfully',
+  // get user
+  GET_USER_SUCCESSFULLY: 'Get user successfully',
+  SEARCH_USER_SUCCESSFULLY: 'Search user successfully',
 } as const
 
 export const HTTP_MESSAGES = {
