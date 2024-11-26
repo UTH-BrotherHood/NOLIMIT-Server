@@ -83,7 +83,7 @@ export const createMessageController = async (
   res: Response
 ) => {
   const { conversationId } = req.params
-  const { message_content, message_type = 'text', sticker_id } = req.body
+  const { message_content, message_type, sticker_id } = req.body
   const { user_id } = req.decoded_authorization as TokenPayload
 
   let result
@@ -115,12 +115,12 @@ export const createMessageController = async (
       file_url: req.fileUrl
     });
 
-    if (!attachment || !attachment._id) {
+    if (!attachment || !attachment.insertedId) {
       throw new Error("Attachment creation failed");
     }
 
     // Tạo tin nhắn
-    result = await conversationsService.createMessage({ conversation_id: conversationId, sender_id: user_id, message_type });
+    result = await conversationsService.createMessage({ conversation_id: conversationId, sender_id: user_id, message_type, message_content });
 
     if (!result || !result._id) {
       throw new Error("Message creation failed");
@@ -128,7 +128,7 @@ export const createMessageController = async (
 
     // Liên kết Attachment với Message
     await conversationsService.linkAttachmentToMessage({
-      attachmentId: attachment._id.toString(),
+      attachmentId: attachment.insertedId.toString(),
       messageId: result._id.toString(),
     });
   }
