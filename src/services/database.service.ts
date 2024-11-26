@@ -4,6 +4,7 @@ import { envConfig } from '~/constants/config'
 import { ConversationDocument } from '~/models/schemas/conversation.schema'
 import { GroupDocument } from '~/models/schemas/group.schema'
 import { MessageDocument } from '~/models/schemas/message.schema'
+import { MessageAttachmentDocument } from '~/models/schemas/message_attachment.schema'
 import { ParticipantDocument } from '~/models/schemas/participants.schema'
 import { TokenDocument } from '~/models/schemas/token.schema'
 import { UserDocument } from '~/models/schemas/user.schema'
@@ -58,7 +59,7 @@ class DatabaseServices {
     return this.db.collection(collection.ATTACHMENT)
   }
 
-  get messageAttachments(): Collection<any> {
+  get messageAttachments(): Collection<MessageAttachmentDocument> {
     return this.db.collection(collection.MESSAGE_ATTACHMENT)
   }
 }
