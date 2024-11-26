@@ -145,16 +145,44 @@ class ConversationsService {
   //           },
   //         },
   //       },
-  //       // 6. Sắp xếp theo thời gian cập nhật mới nhất
+  //       // 6. Lọc chỉ người dùng hiện tại trong conversation_name và loại bỏ phần tử không hợp lệ
+  //       {
+  //         $addFields: {
+  //           conversation_name: {
+  //             $cond: {
+  //               if: { $eq: [{ $type: "$conversationDetails.conversation_name" }, "object"] },
+  //               then: {
+  //                 $arrayToObject: [
+  //                   {
+  //                     $filter: {
+  //                       input: { $objectToArray: "$conversationDetails.conversation_name" },
+  //                       as: "item",
+  //                       cond: {
+  //                         $and: [
+  //                           { $ne: ["$$item.k", null] }, // Loại bỏ nếu key không có giá trị
+  //                           { $ne: ["$$item.v", null] }, // Loại bỏ nếu value không có giá trị
+  //                           { $eq: ["$$item.k", user_id] }, // Chỉ giữ lại phần tử có key là user_id hiện tại
+  //                         ],
+  //                       },
+  //                     },
+  //                   },
+  //                 ],
+  //               },
+  //               else: "$conversationDetails.conversation_name", // Nếu không phải object, giữ nguyên
+  //             },
+  //           },
+  //         },
+  //       },
+  //       // 7. Sắp xếp theo thời gian cập nhật mới nhất
   //       { $sort: { "conversationDetails.last_message_time": -1 } },
-  //       // 7. Phân trang
+  //       // 8. Phân trang
   //       { $skip: (page - 1) * limit },
   //       { $limit: limit },
-  //       // 8. Chỉ chọn các trường cần thiết
+  //       // 9. Chỉ chọn các trường cần thiết
   //       {
   //         $project: {
   //           _id: "$conversationDetails._id",
-  //           conversation_name: "$conversationDetails.conversation_name",
+  //           conversation_name: 1,
   //           is_group: "$conversationDetails.is_group",
   //           creator: "$conversationDetails.creator",
   //           created_at: "$conversationDetails.created_at",
@@ -277,21 +305,26 @@ class ConversationsService {
               $cond: {
                 if: { $eq: [{ $type: "$conversationDetails.conversation_name" }, "object"] },
                 then: {
-                  $arrayToObject: [
-                    {
-                      $filter: {
-                        input: { $objectToArray: "$conversationDetails.conversation_name" },
-                        as: "item",
-                        cond: {
-                          $and: [
-                            { $ne: ["$$item.k", null] }, // Loại bỏ nếu key không có giá trị
-                            { $ne: ["$$item.v", null] }, // Loại bỏ nếu value không có giá trị
-                            { $eq: ["$$item.k", user_id] }, // Chỉ giữ lại phần tử có key là user_id hiện tại
-                          ],
-                        },
+                  // Lọc và trả về tên người dùng trong conversation_name
+                  $let: {
+                    vars: {
+                      participant: {
+                        $arrayElemAt: [
+                          {
+                            $filter: {
+                              input: { $objectToArray: "$conversationDetails.conversation_name" },
+                              as: "item",
+                              cond: {
+                                $eq: ["$$item.k", user_id], // Kiểm tra khóa là user_id
+                              },
+                            },
+                          },
+                          0,
+                        ],
                       },
                     },
-                  ],
+                    in: "$$participant.v", // Trả về giá trị của người dùng (tên)
+                  },
                 },
                 else: "$conversationDetails.conversation_name", // Nếu không phải object, giữ nguyên
               },
@@ -307,7 +340,7 @@ class ConversationsService {
         {
           $project: {
             _id: "$conversationDetails._id",
-            conversation_name: 1,
+            conversation_name: 1, // Trả về conversation_name dưới dạng chuỗi
             is_group: "$conversationDetails.is_group",
             creator: "$conversationDetails.creator",
             created_at: "$conversationDetails.created_at",
@@ -320,8 +353,6 @@ class ConversationsService {
 
     return conversations || [];
   }
-
-
 
 
   async createOneToOneConversation(user_id: string, payload: ConversationOneToOneReqBody) {
