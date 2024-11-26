@@ -10,6 +10,7 @@ import { Message } from '~/models/schemas/message.schema'
 import { decrypt, encrypt } from '~/utils/encryption.utils'
 import { socketService } from '~/services/socket.service'
 import { Attachment } from '~/models/schemas/attachment.schema'
+import { MessageAttachment } from '~/models/schemas/message_attachment.schema'
 
 class ConversationsService {
   async createConversation(conversationData: {
@@ -501,17 +502,17 @@ class ConversationsService {
 
   // lien ket tin nhan voi file dinh kem
   async linkAttachmentToMessage({ attachmentId, messageId }: { attachmentId: string; messageId: string }) {
-    const attachmentObject = {
+    const attachmentObject = new MessageAttachment({
       attachment_id: new ObjectId(attachmentId),
       message_id: new ObjectId(messageId),
-    };
+    });
 
     await databaseServices.messageAttachments.insertOne(attachmentObject);
   }
 
 
   async linkAttachmentsToMessage(messageId: string, attachmentIds: string[]) {
-    const attachmentObjects = attachmentIds.map((id) => ({
+    const attachmentObjects = attachmentIds.map((id) => new MessageAttachment({
       attachment_id: new ObjectId(id),
       message_id: new ObjectId(messageId)
     }))
@@ -641,6 +642,44 @@ class ConversationsService {
             updated_at: 1,
             sender: 1,
             read_by_users: 1
+          }
+        },
+        {
+          $lookup: {
+            from: 'message_attachment',
+            let: { message_id: '$_id' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $eq: ['$message_id', '$$message_id']
+                  }
+                }
+              },
+              {
+                $lookup: {
+                  from: 'attachment',
+                  localField: 'attachment_id',
+                  foreignField: '_id',
+                  as: 'attachment_details'
+                }
+              },
+              {
+                $unwind: {
+                  path: '$attachment_details',
+                  preserveNullAndEmptyArrays: true
+                }
+              },
+              {
+                $project: {
+                  attachment_type: '$attachment_details.attachment_type',
+                  file_url: '$attachment_details.file_url',
+                  created_at: '$attachment_details.created_at',
+                  _id: 0
+                }
+              }
+            ],
+            as: 'attachments'
           }
         }
       ])
