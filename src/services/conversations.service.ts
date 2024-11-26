@@ -61,7 +61,7 @@ class ConversationsService {
   //           as: "conversationDetails",
   //         },
   //       },
-  //       { $unwind: "$conversationDetails" }, // Chuyển mỗi cuộc trò chuyện thành một đối tượng riêng
+  //       { $unwind: "$conversationDetails" },
   //       // 3. Kết nối với bảng group nếu là nhóm
   //       {
   //         $lookup: {
@@ -74,14 +74,14 @@ class ConversationsService {
   //       // 4. Kết nối với bảng user nếu là cuộc trò chuyện cá nhân
   //       {
   //         $lookup: {
-  //           from: "user", // Tên bảng cần nối (bảng user)
+  //           from: "user",
   //           let: {
-  //             is_group: "$conversationDetails.is_group", // Biến để kiểm tra xem cuộc trò chuyện có phải nhóm không
+  //             is_group: "$conversationDetails.is_group",
   //             participants: {
   //               $cond: {
-  //                 if: { $eq: [{ $type: "$conversationDetails.conversation_name" }, "object"] }, // Kiểm tra kiểu dữ liệu
-  //                 then: { $objectToArray: "$conversationDetails.conversation_name" }, // Nếu là object, chuyển thành mảng key-value
-  //                 else: [], // Nếu không phải object, trả về mảng rỗng
+  //                 if: { $eq: [{ $type: "$conversationDetails.conversation_name" }, "object"] },
+  //                 then: { $objectToArray: "$conversationDetails.conversation_name" },
+  //                 else: [],
   //               },
   //             },
   //           },
@@ -90,56 +90,49 @@ class ConversationsService {
   //               $match: {
   //                 $expr: {
   //                   $and: [
-  //                     { $eq: ["$$is_group", false] }, // Chỉ xử lý cuộc trò chuyện cá nhân
-  //                     { $ne: ["$_id", user_id_object] }, // Loại bỏ người dùng hiện tại
+  //                     { $eq: ["$$is_group", false] },
+  //                     { $ne: ["$_id", user_id_object] },
   //                     {
   //                       $in: [
-  //                         "$_id", // So khớp `_id` trong bảng user
+  //                         "$_id",
   //                         {
   //                           $map: {
-  //                             input: "$$participants", // Duyệt qua mảng `participants`
-  //                             as: "participant", // Đặt tên biến đại diện cho mỗi phần tử
-  //                             in: { $toObjectId: "$$participant.k" }, // Chuyển key của `participant` thành ObjectId
+  //                             input: "$$participants",
+  //                             as: "participant",
+  //                             in: { $toObjectId: "$$participant.k" },
   //                           },
   //                         },
   //                       ],
-  //                     }, // Kiểm tra `_id` có nằm trong danh sách `participants`
+  //                     },
   //                   ],
   //                 },
   //               },
   //             },
   //             {
   //               $project: {
-  //                 username: 1, // Lấy tên người dùng
-  //                 avatar_url: 1, // Lấy ảnh đại diện
-  //                 status: 1, // Lấy trạng thái (online/offline)
-  //                 tag: 1, // Lấy tag (biệt danh hoặc nhãn)
+  //                 username: 1, // Chỉ lấy username
   //               },
   //             },
   //           ],
   //           as: "otherUserDetails", // Kết quả của $lookup sẽ lưu vào trường này
   //         },
   //       },
-  //       // 5. Định hình dữ liệu trả về
+  //       // 5. Định hình dữ liệu trả về cho participants
   //       {
   //         $addFields: {
   //           participants: {
   //             $cond: {
   //               if: { $eq: ["$conversationDetails.is_group", true] },
   //               then: {
-  //                 group: {
-  //                   name: { $arrayElemAt: ["$groupDetails.name", 0] },
-  //                   avatar_url: { $arrayElemAt: ["$groupDetails.avatar_url", 0] },
-  //                   announcement: { $arrayElemAt: ["$groupDetails.announcement", 0] },
-  //                 },
+  //                 name: { $arrayElemAt: ["$groupDetails.name", 0] },
+  //                 avatar_url: { $arrayElemAt: ["$groupDetails.avatar_url", 0] },
+  //                 announcement: { $arrayElemAt: ["$groupDetails.announcement", 0] },
   //               },
   //               else: {
-  //                 user: {
-  //                   username: { $arrayElemAt: ["$otherUserDetails.username", 0] },
-  //                   avatar_url: { $arrayElemAt: ["$otherUserDetails.avatar_url", 0] },
-  //                   status: { $arrayElemAt: ["$otherUserDetails.status", 0] },
-  //                   tag: { $arrayElemAt: ["$otherUserDetails.tag", 0] },
-  //                 },
+  //                 name: { $arrayElemAt: ["$otherUserDetails.username", 0] }, // Chỉ lấy username cho participants
+  //                 avatar_url: { $arrayElemAt: ["$otherUserDetails.avatar_url", 0] },
+  //                 status: { $arrayElemAt: ["$otherUserDetails.status", 0] },
+  //                 tag: { $arrayElemAt: ["$otherUserDetails.tag", 0] },
   //               },
   //             },
   //           },
@@ -152,33 +145,98 @@ class ConversationsService {
   //             $cond: {
   //               if: { $eq: [{ $type: "$conversationDetails.conversation_name" }, "object"] },
   //               then: {
-  //                 $arrayToObject: [
-  //                   {
-  //                     $filter: {
-  //                       input: { $objectToArray: "$conversationDetails.conversation_name" },
-  //                       as: "item",
-  //                       cond: {
-  //                         $and: [
-  //                           { $ne: ["$$item.k", null] }, // Loại bỏ nếu key không có giá trị
-  //                           { $ne: ["$$item.v", null] }, // Loại bỏ nếu value không có giá trị
-  //                           { $eq: ["$$item.k", user_id] }, // Chỉ giữ lại phần tử có key là user_id hiện tại
-  //                         ],
-  //                       },
+  //                 $let: {
+  //                   vars: {
+  //                     participant: {
+  //                       $arrayElemAt: [
+  //                         {
+  //                           $filter: {
+  //                             input: { $objectToArray: "$conversationDetails.conversation_name" },
+  //                             as: "item",
+  //                             cond: {
+  //                               $eq: ["$$item.k", user_id], // Kiểm tra khóa là user_id
+  //                             },
+  //                           },
+  //                         },
+  //                         0,
+  //                       ],
   //                     },
   //                   },
-  //                 ],
+  //                   in: "$$participant.v", // Trả về giá trị của người dùng (tên)
+  //                 },
   //               },
   //               else: "$conversationDetails.conversation_name", // Nếu không phải object, giữ nguyên
   //             },
   //           },
   //         },
   //       },
-  //       // 7. Sắp xếp theo thời gian cập nhật mới nhất
+  //       // 7. Lấy tin nhắn cuối cùng cho mỗi cuộc trò chuyện và kết nối với người gửi
+  //       {
+  //         $lookup: {
+  //           from: "message",
+  //           localField: "conversationDetails._id",
+  //           foreignField: "conversation_id",
+  //           pipeline: [
+  //             {
+  //               $sort: { created_at: -1 },
+  //             },
+  //             {
+  //               $limit: 1,
+  //             },
+  //             {
+  //               $lookup: {
+  //                 from: "user",
+  //                 localField: "sender_id",
+  //                 foreignField: "_id",
+  //                 as: "senderDetails",
+  //               },
+  //             },
+  //             // Lấy tất cả các trường của message cần thiết
+  //             {
+  //               $project: {
+  //                 _id: 1,
+  //                 message_content: 1,
+  //                 message_type: 1,
+  //                 is_read: 1,
+  //                 read_by: 1,
+  //                 created_at: 1,
+  //                 updated_at: 1,
+  //                 // senderDetails: {
+  //                 //   id: { $arrayElemAt: ["$senderDetails._id", 0] },
+  //                 //   username: { $arrayElemAt: ["$senderDetails.username", 0] },
+  //                 //   avatar_url: {
+  //                 //     $arrayElemAt: ["$senderDetails.avatar_url", 0]
+  //                 //   },
+  //                 // },
+  //                 senderDetails: {
+  //                   $arrayElemAt: ["$senderDetails", 0], // Lấy phần tử đầu tiên trong mảng senderDetails
+  //                 },
+  //               },
+  //             },
+  //           ],
+  //           as: "last_message",
+  //         },
+  //       },
+  //       // 8. Định hình lại trường last_message
+  //       {
+  //         $addFields: {
+  //           last_message: {
+  //             $arrayElemAt: ["$last_message", 0],
+  //           },
+  //         },
+  //       },
+  //       // 9. Xóa trường sender_name
+  //       {
+  //         $project: {
+  //           "last_message.sender_name": 0, // Xóa trường sender_name
+  //         },
+  //       },
+  //       // 10. Sắp xếp theo thời gian cập nhật mới nhất
   //       { $sort: { "conversationDetails.last_message_time": -1 } },
-  //       // 8. Phân trang
+  //       // 11. Phân trang
   //       { $skip: (page - 1) * limit },
   //       { $limit: limit },
-  //       // 9. Chỉ chọn các trường cần thiết
+  //       // 12. Chỉ chọn các trường cần thiết
   //       {
   //         $project: {
   //           _id: "$conversationDetails._id",
@@ -188,6 +246,7 @@ class ConversationsService {
   //           created_at: "$conversationDetails.created_at",
   //           updated_at: "$conversationDetails.updated_at",
   //           participants: 1,
+  //           last_message: 1,
   //         },
   //       },
   //     ])
@@ -214,7 +273,7 @@ class ConversationsService {
             as: "conversationDetails",
           },
         },
-        { $unwind: "$conversationDetails" }, // Chuyển mỗi cuộc trò chuyện thành một đối tượng riêng
+        { $unwind: "$conversationDetails" },
         // 3. Kết nối với bảng group nếu là nhóm
         {
           $lookup: {
@@ -227,14 +286,14 @@ class ConversationsService {
         // 4. Kết nối với bảng user nếu là cuộc trò chuyện cá nhân
         {
           $lookup: {
-            from: "user", // Tên bảng cần nối (bảng user)
+            from: "user",
             let: {
-              is_group: "$conversationDetails.is_group", // Biến để kiểm tra xem cuộc trò chuyện có phải nhóm không
+              is_group: "$conversationDetails.is_group",
               participants: {
                 $cond: {
-                  if: { $eq: [{ $type: "$conversationDetails.conversation_name" }, "object"] }, // Kiểm tra kiểu dữ liệu
-                  then: { $objectToArray: "$conversationDetails.conversation_name" }, // Nếu là object, chuyển thành mảng key-value
-                  else: [], // Nếu không phải object, trả về mảng rỗng
+                  if: { $eq: [{ $type: "$conversationDetails.conversation_name" }, "object"] },
+                  then: { $objectToArray: "$conversationDetails.conversation_name" },
+                  else: [],
                 },
               },
             },
@@ -243,56 +302,49 @@ class ConversationsService {
                 $match: {
                   $expr: {
                     $and: [
-                      { $eq: ["$$is_group", false] }, // Chỉ xử lý cuộc trò chuyện cá nhân
-                      { $ne: ["$_id", user_id_object] }, // Loại bỏ người dùng hiện tại
+                      { $eq: ["$$is_group", false] },
+                      { $ne: ["$_id", user_id_object] },
                       {
                         $in: [
-                          "$_id", // So khớp `_id` trong bảng user
+                          "$_id",
                           {
                             $map: {
-                              input: "$$participants", // Duyệt qua mảng `participants`
-                              as: "participant", // Đặt tên biến đại diện cho mỗi phần tử
-                              in: { $toObjectId: "$$participant.k" }, // Chuyển key của `participant` thành ObjectId
+                              input: "$$participants",
+                              as: "participant",
+                              in: { $toObjectId: "$$participant.k" },
                             },
                           },
                         ],
-                      }, // Kiểm tra `_id` có nằm trong danh sách `participants`
+                      },
                     ],
                   },
                 },
               },
               {
                 $project: {
-                  username: 1, // Lấy tên người dùng
-                  avatar_url: 1, // Lấy ảnh đại diện
-                  status: 1, // Lấy trạng thái (online/offline)
-                  tag: 1, // Lấy tag (biệt danh hoặc nhãn)
+                  username: 1, // Chỉ lấy trường username
                 },
               },
             ],
             as: "otherUserDetails", // Kết quả của $lookup sẽ lưu vào trường này
           },
         },
-        // 5. Định hình dữ liệu trả về
+        // 5. Định hình dữ liệu trả về cho participants
         {
           $addFields: {
             participants: {
               $cond: {
                 if: { $eq: ["$conversationDetails.is_group", true] },
                 then: {
-                  group: {
-                    name: { $arrayElemAt: ["$groupDetails.name", 0] },
-                    avatar_url: { $arrayElemAt: ["$groupDetails.avatar_url", 0] },
-                    announcement: { $arrayElemAt: ["$groupDetails.announcement", 0] },
-                  },
+                  name: { $arrayElemAt: ["$groupDetails.name", 0] },
+                  avatar_url: { $arrayElemAt: ["$groupDetails.avatar_url", 0] },
+                  announcement: { $arrayElemAt: ["$groupDetails.announcement", 0] },
                 },
                 else: {
-                  user: {
-                    username: { $arrayElemAt: ["$otherUserDetails.username", 0] },
-                    avatar_url: { $arrayElemAt: ["$otherUserDetails.avatar_url", 0] },
-                    status: { $arrayElemAt: ["$otherUserDetails.status", 0] },
-                    tag: { $arrayElemAt: ["$otherUserDetails.tag", 0] },
-                  },
+                  name: { $arrayElemAt: ["$otherUserDetails.username", 0] }, // Lấy chỉ username cho participants
+                  avatar_url: { $arrayElemAt: ["$otherUserDetails.avatar_url", 0] },
+                  status: { $arrayElemAt: ["$otherUserDetails.status", 0] },
+                  tag: { $arrayElemAt: ["$otherUserDetails.tag", 0] },
                 },
               },
             },
@@ -305,7 +357,6 @@ class ConversationsService {
               $cond: {
                 if: { $eq: [{ $type: "$conversationDetails.conversation_name" }, "object"] },
                 then: {
-                  // Lọc và trả về tên người dùng trong conversation_name
                   $let: {
                     vars: {
                       participant: {
@@ -331,21 +382,96 @@ class ConversationsService {
             },
           },
         },
-        // 7. Sắp xếp theo thời gian cập nhật mới nhất
+        // 7. Lấy tin nhắn cuối cùng cho mỗi cuộc trò chuyện và kết nối với người gửi
+        {
+          $lookup: {
+            from: "message",
+            localField: "conversationDetails._id",
+            foreignField: "conversation_id",
+            pipeline: [
+              {
+                $sort: { created_at: -1 },
+              },
+              {
+                $limit: 1,
+              },
+              {
+                $lookup: {
+                  from: "user",
+                  localField: "sender_id",
+                  foreignField: "_id",
+                  as: "senderDetails",
+                },
+              },
+              // Lấy tất cả các trường của message cần thiết
+              {
+                $project: {
+                  _id: 1,
+                  message_content: 1,
+                  message_type: 1,
+                  is_read: 1,
+                  read_by: 1,
+                  created_at: 1,
+                  updated_at: 1,
+                  senderDetails: {
+                    $arrayElemAt: ["$senderDetails", 0], // Lấy phần tử đầu tiên trong mảng senderDetails
+                  },
+                },
+              },
+            ],
+            as: "last_message",
+          },
+        },
+        // 8. Định hình lại trường last_message
+        {
+          $addFields: {
+            last_message: {
+              $arrayElemAt: ["$last_message", 0],
+            },
+          },
+        },
+        // 9. Chỉ lấy username từ senderDetails
+        {
+          $addFields: {
+            "last_message.senderDetails": {
+              username: "$last_message.senderDetails.username", // Lấy chỉ username
+            },
+          },
+        },
+        // 10. Xóa các trường không cần thiết trong last_message
+        {
+          $project: {
+            "last_message.senderDetails.email": 0,
+            "last_message.senderDetails.password": 0,
+            "last_message.senderDetails.date_of_birth": 0,
+            "last_message.senderDetails.avatar_url": 0,
+            "last_message.senderDetails.bio": 0,
+            "last_message.senderDetails.status": 0,
+            "last_message.senderDetails.tag": 0,
+            "last_message.senderDetails.forgot_password": 0,
+            "last_message.senderDetails.verify": 0,
+            "last_message.senderDetails.created_at": 0,
+            "last_message.senderDetails.updated_at": 0,
+            "last_message.senderDetails.last_login_time": 0,
+            "last_message.senderDetails.forgot_password_token": 0,
+          },
+        },
+        // 11. Sắp xếp theo thời gian cập nhật mới nhất
         { $sort: { "conversationDetails.last_message_time": -1 } },
-        // 8. Phân trang
+        // 12. Phân trang
         { $skip: (page - 1) * limit },
         { $limit: limit },
-        // 9. Chỉ chọn các trường cần thiết
+        // 13. Chỉ chọn các trường cần thiết
         {
           $project: {
             _id: "$conversationDetails._id",
-            conversation_name: 1, // Trả về conversation_name dưới dạng chuỗi
+            conversation_name: 1,
             is_group: "$conversationDetails.is_group",
             creator: "$conversationDetails.creator",
             created_at: "$conversationDetails.created_at",
             updated_at: "$conversationDetails.updated_at",
             participants: 1,
+            last_message: 1,
           },
         },
       ])
@@ -353,6 +479,7 @@ class ConversationsService {
 
     return conversations || [];
   }
+
 
 
   async createOneToOneConversation(user_id: string, payload: ConversationOneToOneReqBody) {
