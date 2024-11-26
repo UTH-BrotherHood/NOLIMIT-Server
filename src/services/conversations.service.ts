@@ -11,6 +11,7 @@ import { decrypt, encrypt } from '~/utils/encryption.utils'
 import { socketService } from '~/services/socket.service'
 import { Attachment } from '~/models/schemas/attachment.schema'
 import { MessageAttachment } from '~/models/schemas/message_attachment.schema'
+import { attachmentService } from './attachment.service'
 
 class ConversationsService {
   async createConversation(conversationData: {
@@ -259,6 +260,13 @@ class ConversationsService {
     if (!participants.includes(user_id)) {
       participants.push(user_id)
     }
+
+    await attachmentService.createAttachment(
+      {
+        attachment_type: 'image',
+        file_url: avatar_url
+      }
+    )
 
     // Tạo nhóm mới
     const newGroup = new Group({
