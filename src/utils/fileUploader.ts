@@ -1,8 +1,8 @@
 import cloudinary from '~/config/cloudinary';
-import AWS from 'aws-sdk';
-import admin from 'firebase-admin';
+// import AWS from 'aws-sdk';
+// import admin from 'firebase-admin';
 import stream from 'stream';
-import { RedisClientType, createClient } from 'redis';
+// import { RedisClientType, createClient } from 'redis';
 
 // Redis Client
 // const redisClient: RedisClientType = createClient();
