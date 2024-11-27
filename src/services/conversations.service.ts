@@ -438,9 +438,7 @@ class ConversationsService {
         {
           $lookup: {
             from: 'user',
-            let: {
-              participants: '$participants'
-            },
+            let: { participants: '$participants' },
             pipeline: [
               {
                 $match: {
@@ -450,12 +448,7 @@ class ConversationsService {
                 }
               },
               {
-                $project: {
-                  username: 1,
-                  avatar_url: 1,
-                  status: 1,
-                  tag: 1
-                }
+                $project: { username: 1, avatar_url: 1, status: 1, tag: 1 }
               }
             ],
             as: 'userDetails'
@@ -505,9 +498,9 @@ class ConversationsService {
           $addFields: {
             avatar_url: {
               $cond: {
-                if: { $eq: ['$is_group', true] }, // Nếu là nhóm
+                if: { $eq: ['$is_group', true] },
                 then: { $arrayElemAt: ['$groupDetails.avatar_url', 0] },
-                else: { $arrayElemAt: ['$userDetails.avatar_url', 0] } // Nếu là cuộc trò chuyện 1-1
+                else: { $arrayElemAt: ['$userDetails.avatar_url', 0] }
               }
             }
           }
@@ -543,12 +536,7 @@ class ConversationsService {
             as: 'messages'
           }
         },
-        {
-          $unwind: {
-            path: '$messages',
-            preserveNullAndEmptyArrays: true
-          }
-        },
+        // 10. Lấy tất cả các message_attachment cho các tin nhắn trong cuộc trò chuyện
         {
           $lookup: {
             from: 'message_attachment',
@@ -557,58 +545,34 @@ class ConversationsService {
             as: 'messageAttachments'
           }
         },
-        {
-          $addFields: {
-            // Ensure 'messageAttachments' is an array even if missing or null
-            messageAttachments: {
-              $ifNull: ['$messageAttachments', []]
-            }
-          }
-        },
-        {
-          $unwind: {
-            path: '$messageAttachments',
-            preserveNullAndEmptyArrays: true
-          }
-        },
+        // 11. Lấy thông tin attachment chi tiết dựa trên attachment_id
         {
           $lookup: {
             from: 'attachment',
             localField: 'messageAttachments.attachment_id',
             foreignField: '_id',
-            as: 'attachmentDetails'
+            as: 'attachments'
           }
         },
+        // 12. Giữ lại tất cả các attachments (không unwind)
         {
           $addFields: {
-            // Ensure 'attachmentDetails' is an array, if it's null or missing
-            attachmentDetails: {
-              $ifNull: ['$attachmentDetails', []]
+            attachments: {
+              $map: {
+                input: '$attachments',
+                as: 'attachment',
+                in: {
+                  _id: '$$attachment._id',
+                  attachment_type: '$$attachment.attachment_type',
+                  file_url: '$$attachment.file_url',
+                  created_at: '$$attachment.created_at'
+                }
+              }
             }
           }
         },
-        {
-          $unwind: {
-            path: '$attachmentDetails',
-            preserveNullAndEmptyArrays: true
-          }
-        },
-        {
-          $addFields: {
-            'messages.attachments': {
-              // If 'attachmentDetails' is empty or missing, set an empty array
-              // $cond: {
-              //   if: { $eq: [{ $size: '$attachmentDetails' }, 0] },
-              //   then: [], // If no attachment, return an empty array
-              //   else: {
-              attachment_type: '$attachmentDetails.attachment_type',
-              file_url: '$attachmentDetails.file_url',
-              created_at: '$attachmentDetails.created_at'
-              // }
-              // }
-            }
-          }
-        },
+
+        // 13. Chỉ giữ lại các trường cần thiết
         {
           $project: {
             _id: 1,
@@ -619,7 +583,7 @@ class ConversationsService {
             created_at: 1,
             updated_at: 1,
             participants: 1,
-            messages: 1
+            attachments: 1 // Trả về tất cả các attachments
           }
         }
       ])
