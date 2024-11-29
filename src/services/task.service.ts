@@ -65,6 +65,77 @@ class TaskService {
                 $unwind: '$task'
             },
             {
+                $lookup: {
+                    from: 'user',
+                    localField: 'task.creatorId',
+                    foreignField: '_id',
+                    as: 'creator'
+                }
+            },
+            {
+                $unwind: '$creator'
+            },
+            {
+                $project: {
+                    'creator._id': 1,
+                    'creator.username': 1,
+                    'creator.email': 1,
+                    'creator.avatar_url': 1,
+                    'creator.status': 1,
+                    task: 1,
+                    role: 1,
+                    assigned_at: 1
+                }
+            },
+            {
+                $lookup: {
+                    from: 'task_assignment',
+                    localField: 'task._id',
+                    foreignField: 'task_id',
+                    as: 'task_assignments'
+                }
+            },
+            {
+                $unwind: '$task_assignments'
+            },
+            {
+                $lookup: {
+                    from: 'user',
+                    localField: 'task_assignments.user_id',
+                    foreignField: '_id',
+                    as: 'user'
+                }
+            },
+            {
+                $unwind: '$user'
+            },
+            {
+                $project: {
+                    task: 1,
+                    creator: 1,
+                    role: '$task_assignments.role',
+                    assigned_at: 1,
+                    user: {
+                        _id: 1,
+                        username: 1,
+                        email: 1,
+                        avatar_url: 1,
+                        status: 1,
+                        role: '$task_assignments.role'
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: '$task._id',
+                    task: { $first: '$task' },
+                    creator: { $first: '$creator' },
+                    role: { $first: '$role' },
+                    assigned_at: { $first: '$assigned_at' },
+                    assignees: { $push: '$user' }
+                }
+            },
+            {
                 $project: {
                     _id: '$task._id',
                     title: '$task.task_name',
@@ -76,7 +147,13 @@ class TaskService {
                     start_date: '$task.start_date',
                     progress: '$task.progress',
                     role: '$role',
-                    creatorId: '$task.creatorId',
+                    creator: '$creator',
+                    assignees: '$assignees'
+                }
+            },
+            {
+                $sort: {
+                    'task.due_date': 1
                 }
             },
             {
