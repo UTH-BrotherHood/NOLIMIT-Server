@@ -6,6 +6,7 @@ import { GroupDocument } from '~/models/schemas/group.schema'
 import { MessageDocument } from '~/models/schemas/message.schema'
 import { MessageAttachmentDocument } from '~/models/schemas/message_attachment.schema'
 import { ParticipantDocument } from '~/models/schemas/participants.schema'
+import { TaskDocument } from '~/models/schemas/task.schema'
 import { TokenDocument } from '~/models/schemas/token.schema'
 import { UserDocument } from '~/models/schemas/user.schema'
 
@@ -61,6 +62,14 @@ class DatabaseServices {
 
   get messageAttachments(): Collection<MessageAttachmentDocument> {
     return this.db.collection(collection.MESSAGE_ATTACHMENT)
+  }
+
+  get tasks(): Collection<TaskDocument> {
+    return this.db.collection(collection.TASK)
+  }
+
+  get taskAssignments(): Collection<any> { // Change any to TaskAssigneeDocument // để tạm any chứ sợ không kịp
+    return this.db.collection(collection.TASK_ASSIGNMENT)
   }
 }
 const databaseServices = new DatabaseServices()
