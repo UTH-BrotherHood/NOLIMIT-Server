@@ -12,7 +12,10 @@ const collection = {
   MESSAGE_ATTACHMENT: 'message_attachment', // TIN NHAN DINH KEM
   MESSAGE_REACTION: 'message_reaction', // PHAN UNG TIN NHAN (LIKE, LOVE, HAHA, WOW, SAD, ANGRY)
   USER_NOTIFICATION: 'user_notification', // THONG BAO NGUOI DUNG
+  TASK: 'task', // CÔNG VIỆC
+  TASK_ASSIGNMENT: 'task_assignment', // PHÂN CÔNG CÔNG VIỆC
   // có thể mở rộng sau
+  TASKSLIST: 'taskslist', // DANH SÁCH CÔNG VIỆC
   FRIENDREQUEST: 'friendrequest', // BAN BE
   BLOCKEDUSER: 'blockeduser', // DANH SACH BLOCK
   CONVERSATION_SETTING: 'conversation_setting', // CÀI ĐẶT CUỘC TRÒ CHUYỆN
