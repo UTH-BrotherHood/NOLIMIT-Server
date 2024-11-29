@@ -8,7 +8,7 @@ interface MessageData {
 
 class SocketService {
   private io!: Server
-  private userSockets: Map<string, string[]>
+  private userSockets: Map<string, Set<string>> // Sử dụng Set thay vì Array
 
   constructor() {
     this.userSockets = new Map()
@@ -24,22 +24,19 @@ class SocketService {
     })
 
     this.io.on('connection', (socket) => {
-      console.log('Client connected:', socket.id)
+      console.log(`Client connected: ${socket.id}`)
 
       socket.on('user_connected', (userId: string) => {
         console.log(`User ${userId} connected with socket ${socket.id}`)
 
+        // Sử dụng Set để đảm bảo không có socket trùng
         if (!this.userSockets.has(userId)) {
-          this.userSockets.set(userId, [])
+          this.userSockets.set(userId, new Set())
         }
 
         const userSocketIds = this.userSockets.get(userId)
-        if (userSocketIds && !userSocketIds.includes(socket.id)) {
-          userSocketIds.push(socket.id)
-          this.userSockets.set(userId, userSocketIds)
-        }
-
-        console.log(`Current sockets for user ${userId}:`, this.userSockets.get(userId))
+        userSocketIds?.add(socket.id) // Thêm socket.id vào Set
+        console.log(`Current sockets for user ${userId}:`, [...userSocketIds!])
       })
 
       socket.on('join_conversation', (conversationId: string) => {
@@ -52,15 +49,19 @@ class SocketService {
         console.log(`Socket ${socket.id} left conversation ${conversationId}`)
       })
 
-      socket.on('disconnect', () => {
-        console.log('Client disconnected:', socket.id)
+      socket.on('message_read', (data: { conversationId: string, messageId: string, userId: string }) => {
+        this.emitToRoom(data.conversationId, 'message_read', { messageId: data.messageId, userId: data.userId })
+        console.log(`Message ${data.messageId} marked as read by user ${data.userId} in conversation ${data.conversationId}`)
+      })
 
+      socket.on('disconnect', () => {
+        console.log(`Client disconnected: ${socket.id}`)
+
+        // Xóa socket khỏi userSockets khi client disconnect
         this.userSockets.forEach((socketIds, userId) => {
-          const updatedSocketIds = socketIds.filter((id) => id !== socket.id)
-          if (updatedSocketIds.length === 0) {
+          socketIds.delete(socket.id)
+          if (socketIds.size === 0) {
             this.userSockets.delete(userId)
-          } else {
-            this.userSockets.set(userId, updatedSocketIds)
           }
         })
       })
@@ -68,27 +69,33 @@ class SocketService {
   }
 
   public emitNewMessage(data: MessageData) {
-    console.log('Emitting new message to conversation:', data.conversation_id)
+    console.log(`Emitting new message to conversation: ${data.conversation_id}`)
     this.io.to(data.conversation_id).emit('new_message', data)
+    this.emitUpdatedConversations(data.conversation_id)
+  }
+
+  public emitUpdatedConversations(conversationId: string) {
+    this.io.to(conversationId).emit('updated_conversations', { conversationId })
+    console.log(`Conversation ${conversationId} updated`)
   }
 
   public emitToUser(userId: string, event: string, data: any) {
-    console.log('Emitting to user:', userId)
+    console.log(`Emitting to user: ${userId}`)
     const userSocketIds = this.userSockets.get(userId)
-    console.log('User socket IDs:', userSocketIds)
 
-    if (userSocketIds && userSocketIds.length > 0) {
+    if (userSocketIds && userSocketIds.size > 0) {
+      // Chỉ emit đến các socket còn tồn tại
       userSocketIds.forEach((socketId) => {
-        console.log('Emitting to socket:', socketId)
+        console.log(`Emitting to socket: ${socketId}`)
         this.io.to(socketId).emit(event, data)
       })
     } else {
-      console.log('No active sockets found for user', userId)
+      console.log(`No active sockets found for user: ${userId}`)
     }
   }
 
   public emitToRoom(conversationId: string, event: string, data: any) {
-    console.log('Emitting to room:', conversationId)
+    console.log(`Emitting to room: ${conversationId}`)
     this.io.to(conversationId).emit(event, data)
   }
 
