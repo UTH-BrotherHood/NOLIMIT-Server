@@ -6,8 +6,6 @@ import { ConversationGroupReqBody, ConversationOneToOneReqBody } from '~/models/
 import { TokenPayload } from '~/models/requests/users.requests'
 import { attachmentService } from '~/services/attachment.service'
 import { conversationsService } from '~/services/conversations.service'
-import { Attachment } from '~/models/schemas/attachment.schema'
-import databaseServices from '~/services/database.service'
 
 export const getConversationsController = async (req: Request, res: Response) => {
   const { user_id } = req.decoded_authorization as TokenPayload
@@ -50,8 +48,7 @@ export const createPrivateGroupController = async (
 
 export const getConversationByIdController = async (req: Request<ParamsDictionary>, res: Response) => {
   const { conversationId } = req.params
-  const { user_id } = req.decoded_authorization as TokenPayload
-  const result = await conversationsService.getConversationById(conversationId, user_id)
+  const result = await conversationsService.getConversationById(conversationId)
   return res.status(HTTP_STATUS.OK).json({
     message: CONVERSATION_MESSAGES.GET_CONVERSATION_SUCCESSFULLY,
     data: result
@@ -120,7 +117,7 @@ export const createMessageController = async (
     }
 
     // Tạo tin nhắn
-    result = await conversationsService.createMessage({ conversation_id: conversationId, sender_id: user_id, message_type, message_content });
+    result = await conversationsService.createMessage({ conversation_id: conversationId, sender_id: user_id, message_type, message_content, file_url: req.fileUrl });
 
     if (!result || !result._id) {
       throw new Error("Message creation failed");

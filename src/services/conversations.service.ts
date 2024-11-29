@@ -406,9 +406,8 @@ class ConversationsService {
     }
   }
 
-  async getConversationById(conversationId: string, userId: string) {
+  async getConversationById(conversationId: string) {
     const conversationIdObject = new ObjectId(conversationId)
-    const userIdObject = new ObjectId(userId)
 
     const conversation = await databaseServices.conversations
       .aggregate([
@@ -613,13 +612,15 @@ class ConversationsService {
     sender_id,
     message_type,
     message_content = null,
-    sticker_id = null
+    sticker_id = null,
+    file_url = null
   }: {
     conversation_id: string
     sender_id: string
     message_type: string
     message_content?: string | null
     sticker_id?: string | null
+    file_url?: string | null
   }) {
     const conversation = await databaseServices.conversations.findOne({ _id: new ObjectId(conversation_id) } as any)
 
@@ -650,7 +651,7 @@ class ConversationsService {
       $set: { last_message_time: new Date() }
     })
 
-    this.emitMessageToParticipants(conversation_id, sender_id, newMessage)
+    this.emitMessageToParticipants(conversation_id, sender_id, newMessage, file_url || undefined)
 
     return newMessage
   }
@@ -677,7 +678,7 @@ class ConversationsService {
     await databaseServices.messageAttachments.insertMany(attachmentObjects)
   }
 
-  async emitMessageToParticipants(conversation_id: string, sender_id: string, message: any) {
+  async emitMessageToParticipants(conversation_id: string, sender_id: string, message: any, file_url?: string) {
     const participants = await databaseServices.participants
       .find({ reference_id: new ObjectId(conversation_id) })
       .toArray()
@@ -694,9 +695,8 @@ class ConversationsService {
           conversation_id: conversation_id,
           message: {
             ...message,
-            // message_content: message.message_content ? decrypt(message.message_content) : null,
-            file_url: message.message_type === 'voice' ? message.file_url : undefined, // Đính kèm URL file voice nếu có
-            message_content: message.message_type === 'text' ? decrypt(message.message_content) : null
+            file_url: (message.message_type !== 'text' && file_url) ? file_url : undefined, // Đính kèm URL file voice nếu có
+            message_content: message.message_content ? decrypt(message.message_content) : null
           }
         })
       }
