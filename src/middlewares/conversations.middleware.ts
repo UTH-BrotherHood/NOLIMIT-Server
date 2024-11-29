@@ -115,7 +115,7 @@ export const checkUserConversations = async (req: Request, res: Response, next: 
     if (!userExists) {
         throw new ErrorWithStatus({
             message: CONVERSATION_MESSAGES.USER_NOT_IN_CONVERSATION,
-            status: HTTP_STATUS.FORBIDDEN
+            status: HTTP_STATUS.NOT_FOUND
         });
     }
 
