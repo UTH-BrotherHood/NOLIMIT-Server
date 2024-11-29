@@ -1,5 +1,6 @@
 import { Server } from 'socket.io'
 import { Server as HttpServer } from 'http'
+import { messagesService } from './messages.service'
 
 interface MessageData {
   conversation_id: string
@@ -49,9 +50,14 @@ class SocketService {
         console.log(`Socket ${socket.id} left conversation ${conversationId}`)
       })
 
-      socket.on('message_read', (data: { conversationId: string, messageId: string, userId: string }) => {
-        this.emitToRoom(data.conversationId, 'message_read', { messageId: data.messageId, userId: data.userId })
-        console.log(`Message ${data.messageId} marked as read by user ${data.userId} in conversation ${data.conversationId}`)
+      socket.on('message_read', async (data: { conversationId: string, messageId: string, userId: string }) => {
+        try {
+          await messagesService.markMessageAsRead(data.messageId, data.userId);
+          this.emitToRoom(data.conversationId, 'message_read_update', { messageId: data.messageId, userId: data.userId })
+          console.log(`Message ${data.messageId} marked as read by user ${data.userId} in conversation ${data.conversationId}`)
+        } catch (error) {
+          console.error('Error marking message as read:', error);
+        }
       })
 
       socket.on('disconnect', () => {
