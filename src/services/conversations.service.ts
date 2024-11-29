@@ -268,6 +268,13 @@ class ConversationsService {
       ])
       .toArray()
 
+    // Giải mã nội dung tin nhắn cuối cùng
+    conversations.forEach((conversation) => {
+      if (conversation.last_message && conversation.last_message.message_content) {
+        conversation.last_message.message_content = decrypt(conversation.last_message.message_content)
+      }
+    })
+
     return conversations || []
   }
 
