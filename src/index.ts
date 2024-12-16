@@ -8,6 +8,7 @@ import cors from 'cors'
 import passport from "passport"
 import "~/utils/passport"
 import { socketService } from './services/socket.service'
+import rateLimiterMiddleware from './middlewares/rateLimiter.middleware'
 
 const app = express()
 const httpServer = createServer(app)
@@ -22,6 +23,16 @@ app.use(passport.initialize())
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 app.use('/api/v1', rootRouterV1)
+// Route cụ thể áp dụng rate limiter
+app.get('/api/test', rateLimiterMiddleware, (req, res) => {
+  res.send({ message: 'Request success!' });
+});
+
+// Route không áp dụng rate limiter
+app.get('/api/nolimit', (req, res) => {
+  res.send({ message: 'This route has no rate limit' });
+});
+
 app.use(defaultErrorHandler)
 
 httpServer.listen(envConfig.port, () => {
