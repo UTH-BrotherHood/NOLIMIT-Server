@@ -14,6 +14,8 @@ const collection = {
   USER_NOTIFICATION: 'user_notification', // THONG BAO NGUOI DUNG
   TASK: 'task', // CÔNG VIỆC
   TASK_ASSIGNMENT: 'task_assignment', // PHÂN CÔNG CÔNG VIỆC
+  API_KEY: 'api_key', // API KEY
+
   // có thể mở rộng sau
   TASKSLIST: 'taskslist', // DANH SÁCH CÔNG VIỆC
   FRIENDREQUEST: 'friendrequest', // BAN BE
