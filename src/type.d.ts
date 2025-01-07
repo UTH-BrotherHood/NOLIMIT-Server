@@ -1,5 +1,6 @@
 import { TokenPayload } from '~/models/requests/users.requests'
 import { UserDocument } from '~/models/schemas/user.schema'
+import { ApiKey } from '~/models/schemas/apiKey.schema';
 
 declare global {
   namespace Express {
@@ -12,6 +13,7 @@ declare global {
       conversation?: ConversationDocument;
       fileUrl?: string;
       file?: Express.Multer.File;
+      apiKey?: ApiKey;
     }
   }
 }
