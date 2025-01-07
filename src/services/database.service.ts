@@ -1,6 +1,9 @@
+"use strict"
+
 import { Collection, Db, MongoClient } from 'mongodb'
 import collection from '~/constants/collection'
 import { envConfig } from '~/constants/config'
+import { IApiKey } from '~/models/schemas/apiKey.schema'
 import { ConversationDocument } from '~/models/schemas/conversation.schema'
 import { GroupDocument } from '~/models/schemas/group.schema'
 import { MessageDocument } from '~/models/schemas/message.schema'
@@ -71,6 +74,11 @@ class DatabaseServices {
   get taskAssignments(): Collection<any> { // Change any to TaskAssigneeDocument // để tạm any chứ sợ không kịp
     return this.db.collection(collection.TASK_ASSIGNMENT)
   }
+
+  get apiKeys(): Collection<IApiKey> {
+    return this.db.collection(collection.API_KEY)
+  }
 }
 const databaseServices = new DatabaseServices()
 export default databaseServices
+
