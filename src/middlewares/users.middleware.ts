@@ -10,7 +10,7 @@ import { ErrorWithStatus } from '~/utils/errors'
 import { NAME_REGEXP } from '~/constants/regex'
 import { NextFunction, Request, Response } from 'express'
 import { TokenPayload } from '~/models/requests/users.requests'
-import { userVerificationStatus } from '~/constants/enums'
+import { tokenType, userVerificationStatus } from '~/constants/enums'
 import databaseServices from '~/services/database.service'
 import { ObjectId } from 'mongodb'
 import bcrypt from 'bcrypt'
@@ -270,6 +270,18 @@ export const refreshTokenValidation = validate(
               })
             }
             try {
+              const refreshTokenExist = await databaseServices.tokens.findOne({
+                token: value,
+                type: tokenType.RefreshToken
+              })
+
+              if (!refreshTokenExist) {
+                throw new ErrorWithStatus({
+                  message: USERS_MESSAGES.REFRESH_TOKEN_IS_INVALID,
+                  status: HTTP_STATUS.UNAUTHORIZED
+                })
+              }
+
               const decoded_refresh_token = await verifyToken({
                 token: value,
                 secretOrPublickey: envConfig.jwtSecretRefreshToken

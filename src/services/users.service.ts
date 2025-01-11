@@ -246,10 +246,15 @@ class UsersService {
     // });
 
     // 5. Cập nhật trạng thái người dùng(tùy chọn)
-    // await User.findByIdAndUpdate(req.user.id, {
-    //   lastLogout: new Date(),
-    //   isOnline: false
-    // });
+    databaseServices.users.updateOne(
+      { _id: new ObjectId(user_id) },
+      {
+        $set: {
+          lastLoginTime: new Date(),
+          status: "offline",
+        }
+      }
+    )
 
     // 6. Cập nhập trạng thái thành công
 
