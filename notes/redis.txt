@@ -1,0 +1,130 @@
+const Redis = require('ioredis');
+const { promisify } = require('util');
+
+class RedisTokenBlacklist {
+  constructor() {
+    // Khởi tạo Redis client với retry strategy
+    this.redis = new Redis({
+      host: process.env.REDIS_HOST,
+      port: process.env.REDIS_PORT,
+      password: process.env.REDIS_PASSWORD,
+      retryStrategy: (times) => {
+        const delay = Math.min(times * 50, 2000);
+        return delay;
+      },
+      maxRetriesPerRequest: 3
+    });
+
+    // Xử lý các sự kiện Redis
+    this.redis.on('error', (error) => {
+      console.error('Redis error:', error);
+      // Gửi alert tới monitoring system
+      this.notifyMonitoring('REDIS_ERROR', error);
+    });
+
+    this.redis.on('connect', () => {
+      console.log('Connected to Redis successfully');
+    });
+  }
+
+  // Thêm token vào blacklist
+  async addToBlacklist(token, metadata = {}) {
+    try {
+      const decoded = jwt.decode(token);
+      if (!decoded || !decoded.exp) {
+        throw new Error('Invalid token format');
+      }
+
+      const timeToExpire = decoded.exp - Math.floor(Date.now() / 1000);
+      if (timeToExpire <= 0) {
+        return false; // Token đã hết hạn, không cần blacklist
+      }
+
+      // Key format: bl_[token_hash]
+      const key = `bl_${this.hashToken(token)}`;
+      
+      // Lưu metadata dưới dạng JSON
+      const value = JSON.stringify({
+        revokedAt: new Date().toISOString(),
+        reason: metadata.reason || 'manual_revocation',
+        revokedBy: metadata.revokedBy,
+        ...metadata
+      });
+
+      // Sử dụng SETEX để tự động xóa sau khi hết hạn
+      await this.redis.setex(key, timeToExpire, value);
+
+      // Thêm vào set để tracking
+      await this.redis.sadd('active_blacklist', key);
+
+      // Log event
+      await this.logBlacklistEvent('add', token, metadata);
+
+      return true;
+    } catch (error) {
+      console.error('Error adding token to blacklist:', error);
+      throw error;
+    }
+  }
+
+  // Kiểm tra token có trong blacklist không
+  async isBlacklisted(token) {
+    try {
+      const key = `bl_${this.hashToken(token)}`;
+      const exists = await this.redis.exists(key);
+      
+      // Increment counter cho monitoring
+      if (exists) {
+        await this.redis.hincrby('blacklist_stats', 'blocked_attempts', 1);
+      }
+
+      return exists === 1;
+    } catch (error) {
+      console.error('Error checking blacklist:', error);
+      // Trong trường hợp lỗi, coi như token không hợp lệ
+      return true;
+    }
+  }
+
+  // Lấy thống kê về blacklist
+  async getStats() {
+    try {
+      const pipeline = this.redis.pipeline();
+      
+      pipeline.scard('active_blacklist'); // Số lượng token trong blacklist
+      pipeline.hgetall('blacklist_stats'); // Các stats khác
+
+      const [activeCount, stats] = await pipeline.exec();
+
+      return {
+        activeTokens: activeCount[1],
+        ...stats[1],
+        lastChecked: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error('Error getting blacklist stats:', error);
+      throw error;
+    }
+  }
+
+  // Hash token để giảm kích thước key
+  private hashToken(token) {
+    return crypto.createHash('sha256').update(token).digest('hex');
+  }
+
+  // Cleanup và maintenance
+  async performMaintenance() {
+    try {
+      // Xóa các key hết hạn khỏi tracking set
+      const keys = await this.redis.smembers('active_blacklist');
+      for (const key of keys) {
+        const exists = await this.redis.exists(key);
+        if (!exists) {
+          await this.redis.srem('active_blacklist', key);
+        }
+      }
+    } catch (error) {
+      console.error('Error during maintenance:', error);
+    }
+  }
+}

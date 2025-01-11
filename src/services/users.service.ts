@@ -221,8 +221,38 @@ class UsersService {
   }
 
   async logout(refresh_token: string) {
+    // 1. Lấy các token
     const { user_id } = await usersService.decodeRefreshToken(refresh_token)
+
+    // 2. đưa access_token ,refresh_token vào blacklist (sử dụng redis) 
+    // const decoded = jwt.decode(accessToken);
+    // const tokenExp = decoded.exp;
+    // const timeToExpire = tokenExp - Math.floor(Date.now() / 1000);
+
+    // await redisClient.setex(
+    //   `bl_${accessToken}`,
+    //   timeToExpire,
+    //   'true'
+    // );
+
+    // 3. Xóa refresh token khỏi cơ sở dữ liệu
     await databaseServices.tokens.deleteOne({ user_id: new ObjectId(user_id), token: refresh_token })
+
+    // 4. Xóa cookie chứa refresh token
+    // res.clearCookie('refreshToken', {
+    //   httpOnly: true,
+    //   secure: process.env.NODE_ENV === 'production',
+    //   sameSite: 'strict'
+    // });
+
+    // 5. Cập nhật trạng thái người dùng(tùy chọn)
+    // await User.findByIdAndUpdate(req.user.id, {
+    //   lastLogout: new Date(),
+    //   isOnline: false
+    // });
+
+    // 6. Cập nhập trạng thái thành công
+
   }
 
   async checkEmailExist(email: string) {
@@ -301,6 +331,8 @@ class UsersService {
     })
 
     await databaseServices.tokens.deleteMany({ user_id: user._id, type: tokenType.RefreshToken })
+
+    // thêm vào blacklist
 
     // đổi unverified thành verified
     if (user.verify === userVerificationStatus.Unverified) {
