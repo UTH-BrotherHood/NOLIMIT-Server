@@ -2,7 +2,7 @@ import { ErrorRequestHandler } from 'express'
 import { omit } from 'lodash'
 import HTTP_STATUS from '~/constants/httpStatus'
 import logger from '~/loggers/winston.log'
-import { AppError, ErrorWithStatus } from '~/utils/errors'
+import { ErrorWithStatus } from '~/utils/errors'
 
 // Định nghĩa rõ kiểu là ErrorRequestHandler
 export const defaultErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
