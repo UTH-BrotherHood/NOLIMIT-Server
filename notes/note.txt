@@ -1,5 +1,6 @@
 # thêm các trường cần thiết (ip, role của user) và access và refresh token.
 # xử lí lại chức năng đăng xuất - logout (sử dụng blacklist và redis).
+# xử lí chức năng đăng nhập khi đăng nhập sai các trường => không in ra lỗi chi tiết
 
 # thêm route revoke token
 - các tình huống cần revoke token:
