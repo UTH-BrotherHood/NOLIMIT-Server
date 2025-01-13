@@ -11,7 +11,7 @@ export const USERS_MESSAGES = {
   PASSWORD_MUST_BE_STRING: 'Password must be a string',
   PASSWORD_LENGTH: 'Password must be at least 6 characters long',
   PASSWORD_MUST_BE_STRONG:
-    ' Password must be at least 6 characters long, contain at least one uppercase letter, one lowercase letter, one number and one symbol',
+    'Password must be at least 6 characters long, contain at least one uppercase letter, one lowercase letter, one number and one symbol',
   CONFIRM_PASSWORD_REQUIRED: 'Confirm password is required',
   CONFIRM_PASSWORD_MUST_BE_MATCH: 'Confirm password must match with password',
   EMAIL_OR_PASSWORD_IS_INCORRECT: 'Email or password is incorrect',
@@ -60,7 +60,7 @@ export const USERS_MESSAGES = {
   GET_ME_SUCCESSFULLY: 'Get me successfully',
   // get user
   GET_USER_SUCCESSFULLY: 'Get user successfully',
-  SEARCH_USER_SUCCESSFULLY: 'Search user successfully',
+  SEARCH_USER_SUCCESSFULLY: 'Search user successfully'
 } as const
 
 export const HTTP_MESSAGES = {
@@ -68,7 +68,7 @@ export const HTTP_MESSAGES = {
   INTERNAL_SERVER_ERROR: 'Internal server error',
   UNAUTHORIZED: 'Unauthorized',
   UNKNOW_ERROR: 'Unknow error',
-  INVALID_CODE: 'Invalid code',
+  INVALID_CODE: 'Invalid code'
 } as const
 
 export const CONVERSATION_MESSAGES = {
@@ -94,7 +94,7 @@ export const CONVERSATION_MESSAGES = {
   GET_LAST_MESSAGE_SEEN_STATUS_SUCCESSFULLY: 'Get last message seen status successfully',
   // Participants
   USER_ALREADY_IN_CONVERSATION: 'User already in conversation',
-  USER_NOT_IN_CONVERSATION: 'User not in conversation',
+  USER_NOT_IN_CONVERSATION: 'User not in conversation'
 } as const
 
 export const GROUP_MESSAGES = {
@@ -111,7 +111,7 @@ export const GROUP_MESSAGES = {
   USER_NOT_IN_GROUP: 'User not in group',
   USER_ALREADY_IN_GROUP: 'User already in group',
   ADD_USER_TO_GROUP_SUCCESSFULLY: 'Add user to group successfully',
-  REMOVE_USER_FROM_GROUP_SUCCESSFULLY: 'Remove user from group successfully',
+  REMOVE_USER_FROM_GROUP_SUCCESSFULLY: 'Remove user from group successfully'
 } as const
 
 export const PARTICIPANTS_MESSAGES = {
@@ -124,5 +124,5 @@ export const PARTICIPANTS_MESSAGES = {
   PARTICIPANT_ID_INVALID: 'Participant ID is invalid',
   PARTICIPANT_ROLE_REQUIRED: 'Participant role is required',
   PARTICIPANT_ROLE_MUST_BE_STRING: 'Participant role must be a string',
-  PARTICIPANT_ROLE_INVALID: 'Participant role is invalid',
+  PARTICIPANT_ROLE_INVALID: 'Participant role is invalid'
 } as const
