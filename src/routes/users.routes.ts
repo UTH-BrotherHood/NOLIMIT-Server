@@ -53,7 +53,6 @@ usersRouters.post('/login', loginValidation, wrapRequestHandler(loginController)
 Description: This route is used to login with google
 Method: GET
 */
-// usersRouters.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }))
 usersRouters.get(
   '/google',
   passport.authenticate('google', { scope: ['profile', 'email'], session: false })
@@ -76,6 +75,14 @@ Path: /refresh-token
 Method: POST
 Body: { refresh_token : string}
 */
+// 1. Kiểm tra access token.
+// 2. Verify access token.
+// 3. Nếu access token hết hạn, kiểm tra refresh token
+// 4. Verify refresh token
+// 5. Tạo access token mới
+// 6. Cập nhật headers
+// 7. Log việc refresh token để theo dõi
+// 8. Nếu refresh token cũng hết hạn, Xóa refresh token, cũ bắt đăng nhập lại
 usersRouters.post('/refresh-token', refreshTokenValidation, wrapRequestHandler(refreshTokenController))
 
 /*
@@ -165,4 +172,65 @@ usersRouters.get('/me', accessTokenValidation, wrapRequestHandler(meController))
 
 usersRouters.get('/search', accessTokenValidation, verifiedUserValidation, wrapRequestHandler(searchUserController))
 
+
 export default usersRouters
+
+// thêm route revoke token
+// các tình huống cần revoke token:
+
+// Các trường hợp bảo mật:
+
+// Phát hiện tài khoản bị xâm nhập
+// Người dùng thay đổi mật khẩu
+// Phát hiện hoạt động đáng ngờ
+// Admin cần vô hiệu hóa tài khoản người dùng
+
+
+// Quản lý phiên đăng nhập:
+
+// Người dùng muốn đăng xuất khỏi một thiết bị cụ thể
+// Đăng xuất khỏi tất cả các thiết bị
+// Xóa các phiên đăng nhập cũ
+
+
+// Tuân thủ chính sách:
+
+// Thực thi chính sách bảo mật mới
+// Đáp ứng yêu cầu pháp lý
+// Thực hiện các thay đổi hệ thống lớn
+
+// Cách triển khai revoke token hiệu quả:
+
+// Sử dụng Redis làm token blacklist:
+// Lưu trữ các token đã bị thu hồi
+// Tự động xóa token hết hạn
+// Hiệu suất cao khi kiểm tra
+
+
+// Xử lý đồng bộ:
+
+// Đảm bảo tất cả server đều nhận được thông tin về token bị thu hồi
+// Xử lý cache và đồng bộ giữa các instance
+// Giải quyết race conditions
+
+
+// Monitoring và Logging:
+
+// Theo dõi các pattern revoke token bất thường
+// Log đầy đủ thông tin về việc thu hồi
+// Cảnh báo khi có nhiều revoke trong thời gian ngắn
+
+
+// Trải nghiệm người dùng:
+
+
+// Thông báo cho người dùng về việc phiên bị kết thúc
+// Hướng dẫn người dùng đăng nhập lại
+// Giải thích lý do token bị thu hồi(nếu phù hợp)
+
+// Để triển khai hệ thống revoke token hiệu quả, bạn nên:
+
+// Sử dụng cơ sở dữ liệu phù hợp(Redis thường là lựa chọn tốt)
+// Có chiến lược clear blacklist định kỳ
+// Implement rate limiting cho các API revoke
+// Có system monitoring để phát hiện vấn đề
