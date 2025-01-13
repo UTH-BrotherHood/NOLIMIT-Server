@@ -30,3 +30,32 @@ export class EntityError extends ErrorWithStatus {
     this.errors = errors
   }
 }
+
+// class AppError extends Error {
+//   public status: number
+//   public isOperational: boolean
+//   public errorType?: string
+
+//   constructor(message: string, status: number, isOperational = true, errorType?: string) {
+//     super(message)
+//     this.status = status
+//     this.isOperational = isOperational
+//     this.errorType = errorType
+
+//     Error.captureStackTrace(this, this.constructor)
+//   }
+// }
+
+// class ValidationError extends AppError {
+//   constructor(message = 'Validation error', errorType = 'VALIDATION_ERROR') {
+//     super(message, 400, true, errorType)
+//   }
+// }
+
+// class AuthenticationError extends AppError {
+//   constructor(message = 'Invalid credentials', errorType = 'AUTHENTICATION_ERROR') {
+//     super(message, 401, true, errorType)
+//   }
+// }
+
+// export { AppError, ValidationError, AuthenticationError }
