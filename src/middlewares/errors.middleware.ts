@@ -1,20 +1,33 @@
 import { ErrorRequestHandler } from 'express'
 import { omit } from 'lodash'
 import HTTP_STATUS from '~/constants/httpStatus'
-import logger from '~/loggers/winston.log'
+import { logger } from '~/loggers/myLogger.log'
+// import myLoggerLog from '~/loggers/myLogger.log'
+// import logger from '~/loggers/winston.log'
 import { ErrorWithStatus } from '~/utils/errors'
 
-// Định nghĩa rõ kiểu là ErrorRequestHandler
 export const defaultErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
-  // const errorDetails = {
-  //   message: err.message || 'An error occurred',
-  //   stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
-  // }
+  const requestInfo = {
+    method: req.method,
+    originalUrl: req.originalUrl,
+    params: req.params,
+    body: omit(req.body, ['password', 'confirmPassword']), // Loại bỏ các field nhạy cảm
+    query: req.query,
+    userIP: req.ip || req.socket.remoteAddress
+  }
 
-  // // Log lỗi chi tiết
-  // logger.error('Error caught in middleware', errorDetails)
-
-  logger.error(`${err.status || 500} - ${err.message}`)
+  // Log error với context và thông tin chi tiết
+  logger.error(
+    err.message,
+    'ErrorHandler', // Tên của service/context
+    Array.isArray(req.headers['x-request-id']) ? req.headers['x-request-id'][0] : req.headers['x-request-id'] || 'NO_REQUEST_ID', // requestId
+    {
+      errorName: err.name,
+      errorStack: err.stack,
+      status: err instanceof ErrorWithStatus ? err.status : HTTP_STATUS.INTERNAL_SERVER_ERROR,
+      requestInfo
+    }
+  )
 
   if (err instanceof ErrorWithStatus) {
     res.status(err.status).json(omit(err, 'status'))

@@ -1,19 +1,31 @@
-import Logger from '../loggers/discord.log'
 import { Request, Response, NextFunction } from 'express'
+import { discordLogger } from '../loggers/discord.log'
+import { v4 as uuidv4 } from 'uuid';
 
-export const pushToLogDiscord = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const pushToLogDiscord = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
-    Logger.sendToFormatCode({
-      code: { host: req.get('host') },
-      message: `this is:: ${req.get('host')}`
+    const requestId = uuidv4();
+    req.headers['x-request-id'] = requestId;
+
+    await discordLogger.sendToFormatCode({
+      title: `Request Method: ${req.method}`,
+      context: `Request ID: ${requestId}`,
+      code: {
+        data: req.method === 'GET' ? req.query : req.body,
+        url: req.originalUrl,
+        headers: req.headers,
+        ip: req.ip
+      },
+      message: `${req.method} ${req.get('host')}${req.originalUrl}`
     })
-    Logger.sendToFormatCode({
-      title: `Method: ${req.method}`,
-      code: req.method === 'GET' ? req.query : req.body,
-      message: `${req.get('host')}${req.originalUrl}`
-    })
+
     next()
   } catch (error) {
-    next(error)
+    console.error('Error in Discord logging middleware:', error)
+    next()
   }
 }

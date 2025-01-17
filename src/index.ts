@@ -8,12 +8,13 @@ import cors from 'cors'
 import passport from "passport"
 import "~/utils/passport"
 import { socketService } from './services/socket.service'
-import { checkApiKey } from './middlewares/apiKey.middleware'
-import { wrapRequestHandler } from './utils/handlers'
-import rateLimiterMiddleware from './middlewares/rateLimiter.middleware'
+// import { checkApiKey } from './middlewares/apiKey.middleware'
+// import { wrapRequestHandler } from './utils/handlers'
+// import rateLimiterMiddleware from './middlewares/rateLimiter.middleware'
 import helmet from 'helmet'
-// import compression from 'compression'
+import compression from 'compression'
 import morgan from 'morgan'
+import { discordLogger } from './loggers/discord.log'
 
 const app = express()
 const httpServer = createServer(app)
@@ -21,11 +22,15 @@ const httpServer = createServer(app)
 // Khởi tạo socket service
 socketService.initialize(httpServer)
 
+// Khởi tạo logger discord
+discordLogger.initialize()
+
+// connect to database
 databaseServices.connect()
 
 // init middleware
 app.use(helmet())
-// app.use(compression())
+app.use(compression())
 app.use(morgan('dev'))
 app.use(cors())
 app.use(passport.initialize())
