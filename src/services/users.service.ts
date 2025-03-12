@@ -11,6 +11,7 @@ import { ObjectId } from 'mongodb'
 import { ErrorWithStatus } from '~/utils/errors'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { sendForgotPassWordEmail, sendVerifyRegisterEmail } from '~/utils/mail'
+import { logger } from '~/loggers/myLogger.log'
 
 class UsersService {
   private signAccessToken({ user_id, verify }: { user_id: string; verify: userVerificationStatus }) {
@@ -196,6 +197,23 @@ class UsersService {
       })
     }
 
+    // update last login time and status
+    databaseServices.users.updateOne(
+      { _id: new ObjectId(user._id.toString()) },
+      {
+        $set: {
+          last_login_time: new Date(),
+          status: "online",
+        }
+      }
+    )
+
+    logger.info('User successfully logged in', '', '', {
+      email: payload.email,
+      userId: user._id.toString(),
+      timestamp: new Date().toISOString()
+    })
+
     const [access_token, refresh_token] = await this.signAccessAndRefreshToken({
       user_id: user._id.toString(),
       verify: user.verify
@@ -245,12 +263,12 @@ class UsersService {
     //   sameSite: 'strict'
     // });
 
-    // 5. Cập nhật trạng thái người dùng(tùy chọn)
+    // 5. Cập nhật trạng thái người dùng
     databaseServices.users.updateOne(
       { _id: new ObjectId(user_id) },
       {
         $set: {
-          lastLoginTime: new Date(),
+          last_login_time: new Date(),
           status: "offline",
         }
       }
@@ -329,6 +347,18 @@ class UsersService {
         message: USERS_MESSAGES.USER_NOT_FOUND
       })
     }
+
+    databaseServices.users.updateOne(
+      { _id: new ObjectId(user._id) },
+      {
+        $set: {
+          last_login_time: new Date(),
+          status: "online",
+        }
+      }
+    )
+
+    logger.info(`Google login attempt for user: ${user.email}`);
 
     const [access_token, refresh_token] = await this.signAccessAndRefreshToken({
       user_id: user ? user._id.toString() : new ObjectId().toString(),

@@ -82,7 +82,7 @@ export interface UserDocument extends Document {
   verify: userVerificationStatus
   created_at: Date
   updated_at: Date
-  lastLoginTime: Date
+  last_login_time: Date
 }
 
 const User = model<UserDocument>(collection.USER, UserSchema)
